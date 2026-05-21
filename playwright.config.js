@@ -1,81 +1,91 @@
-// @ts-check
-import { defineConfig, devices } from '@playwright/test';
+import 'dotenv/config';
+import { defineConfig } from '@playwright/test';
+
+const isJenkins = !!process.env.CI || !!process.env.JENKINS_HOME || !!process.env.BITBUCKET_BUILD_NUMBER;
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Environment definitions
+ * Usage: npx playwright test --project=qa  (or pre, prod)
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+const ENVIRONMENTS = {
+  qa: { name: 'qa', url: 'https://qa-my.innago.com' },
+  pre: { name: 'pre', url: 'https://pre-my.innago.com' },
+  prod: { name: 'prod', url: 'https://my.innago.com' },
+};
 
 /**
- * @see https://playwright.dev/docs/test-configuration
+ * Read environment override from INNAGO_ENV.
+ * Defaults to qa if no value is set.
+ */
+const currentEnv = process.env.INNAGO_ENV || 'qa';
+const envConfig = ENVIRONMENTS[currentEnv];
+
+/**
+ * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
-  use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+ testDir: './specs',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-  },
+ /* Run tests in files in parallel */
+ fullyParallel: true,
 
-  /* Configure projects for major browsers */
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
+ /* Fail the build on CI if you accidentally left test only in a file */
+ forbidOnly: !!process.env.CI,
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+ /* Retry on CI only */
+ retries: process.env.CI ? 2 : 0,
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+ /* Opt out of parallel tests on CI */
+ workers: process.env.CI ? 1 : undefined,
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+ /* Reporter to use */
+ //reporter: 'html',
+ reporter: [['list'], ['html'], ['allure-playwright', { outputFolder: 'allure-results', detail: true, suiteTitle: true }]],
+ //reporter: [['verbose'], ['html']],
 
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
-  ],
+ expect: {
+  timeout: 180000,
+ },
+ timeout: 3000000,
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
+ // expect: {
+ //  timeout: 10000,
+ // },
+ // timeout: 60000,
+
+ /* Shared settings */
+ use: {
+  /* Base URL to use in actions like await page.goto(''). */
+  baseURL: envConfig.url,
+
+  /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+  trace: 'on-first-retry',
+  headless: !!process.env.CI,
+  //trace: 'on-first-retry',
+  screenshot: 'only-on-failure',
+  video: 'retain-on-failure',
+  //viewport: { width: 1280, height: 720 },
+  // headless: false,
+  // viewport: null,
+  // channel: "chrome",
+  // launchOptions: {
+  //     args: ["--start-maximized"],
   // },
-});
+  // screen: { width: 1920, height: 1080 },
+ },
 
+ /* Projects - one per environment */
+ projects: [
+  {
+   name: 'chromium',
+   use: {
+    browserName: 'chromium',
+    launchOptions: {
+     args: isJenkins ? [] : ['--start-maximized'],
+    },
+    viewport: isJenkins ? { width: 1920, height: 1080 } : null,
+    colorScheme: 'dark',
+   },
+  },
+ ],
+});
