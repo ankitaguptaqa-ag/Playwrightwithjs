@@ -1,0 +1,150 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: propertyOwner/expenses/expenses.spec.js >> Expenses Tests - shared login >> Verify user is able to add single expense and that it is shown in the expense list
+- Location: specs/propertyOwner/expenses/expenses.spec.js:69:5
+
+# Error details
+
+```
+TimeoutError: locator.fill: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator('//input[@data-id="amount"]')
+
+```
+
+# Test source
+
+```ts
+  186 |             zip: TestData.zip(),
+  187 |         };
+  188 | 
+  189 |         await this.clickAddNewPayee();
+  190 |         await this.addNewPayeeForm.vendorNameInput.fill(details.vendorName);
+  191 |         await this.addNewPayeeForm.firstNameInput.fill(details.firstName);
+  192 |         await this.addNewPayeeForm.lastNameInput.fill(details.lastName);
+  193 |         await this.addNewPayeeForm.categoryArrowClick.click();
+  194 |         await this.getCategoryOption(details.category).click();
+  195 |         await this.page.waitForTimeout(1000);
+  196 |         await this.addAdditionalInfoButton.addButton.click({force: true});
+  197 |         await this.addAdditionalInfoButton.phoneNumberInput.fill(details.phoneNumber);
+  198 |         await this.addAdditionalInfoButton.emailInput.fill(details.email);
+  199 |         await this.addAdditionalInfoButton.websiteInput.fill(details.website);
+  200 |         await this.addAdditionalInfoButton.addressLine1Input.fill(details.address1);
+  201 |         await this.addAdditionalInfoButton.addressLine2Input.fill(details.address2);
+  202 |         await this.addAdditionalInfoButton.cityInput.fill(details.city);
+  203 |         await this.addAdditionalInfoButton.stateDropdown.click();
+  204 |         await this.getStateOption(details.state).click();
+  205 |         await this.page.waitForTimeout(1000);
+  206 |         await this.addAdditionalInfoButton.postalCodeInput.fill(details.zip);
+  207 |         await this.addNewPayeeForm.addButton.click();
+  208 |         return details; // Return the details for verification in the test
+  209 |     }
+  210 | 
+  211 | 
+  212 | 
+  213 |     //**
+  214 |     //  Add single expense flow and function writing*/
+  215 | 
+  216 |     async selectRandomTaxableEntity() {
+  217 |     await this.addExpense.taxableEntityDropdown.click();
+  218 |     const options = this.page.locator('//ng-dropdown-panel//div[@role="option"]');
+  219 |     const count = await options.count();
+  220 |     const randomIndex = Math.floor(Math.random() * count);
+  221 |     await options.nth(randomIndex).click();
+  222 |     }
+  223 | 
+  224 |     async selectBankAccountIfAvailable() {
+  225 |         await this.addExpense.bankAccountDropdown.click();
+  226 |         const isEmpty = await this.addExpense.noBankItemsFound.isVisible();
+  227 |         if(isEmpty){
+  228 |             //no bank account linked to this taxable entity, so we can skip selecting a bank account
+  229 |             await this.page.keyboard.press('Escape'); // Close the dropdown
+  230 |             return;
+  231 |         }
+  232 |         const bankOption = this.page.locator('//ng-dropdown-panel//div[@role="option"]').first();
+  233 |         await bankOption.click();
+  234 | 
+  235 |     }
+  236 | 
+  237 |     async selectRandomProperty() {
+  238 |         await this.addExpense.propertyDropdown.click();
+  239 |         const options = this.page.locator('//ng-dropdown-panel//div[@role="option"]');
+  240 |         const count = await options.count();
+  241 |         const randomIndex = Math.floor(Math.random() * count);
+  242 |         await options.nth(randomIndex).click();
+  243 |     }
+  244 | 
+  245 |     async selectUnitIfAvailable() {
+  246 |         await this.addExpense.unitDropdown.click();
+  247 |         const isEmpty = await this.addExpense.noItemsFound.isVisible();
+  248 | 
+  249 |         if (isEmpty) {
+  250 |             await this.page.keyboard.press('Escape');
+  251 |             return;
+  252 |         }
+  253 | 
+  254 |       const unitOption = this.page.locator('//ng-dropdown-panel//div[@role="option"]').first();
+  255 |       await unitOption.click();
+  256 |     }
+  257 | 
+  258 |     async selectRandomPayee() {
+  259 |     await this.addExpense.payeeDropdown.click();
+  260 |     const options = this.page.locator('//ng-dropdown-panel//div[@role="option"]');
+  261 |     const count = await options.count();
+  262 |     const randomIndex = Math.floor(Math.random() * count);
+  263 |     await options.nth(randomIndex).click();
+  264 |     }
+  265 | 
+  266 | 
+  267 |     async recordSingleExpense() {
+  268 |         await this.addExpenseButton.click();
+  269 |         await this.addExpense.singleExpenseHeading.waitFor({ state: 'visible', timeout: 5000 });
+  270 |         const expenseDetails = {
+  271 |             description: `Expense_${TestData.randomNumber(5)}`,
+  272 |             amount: '200.00',
+  273 |         };
+  274 | 
+  275 |         await this.addExpense.calendarIcon.click();
+  276 |         await this.calendar.selectToday();
+  277 |         await this.addExpense.categoryDropdown.click();
+  278 |         await this.addExpense.categorySearchInput.fill(`Maggie_${TestData.randomNumber(5)}`);
+  279 |         await this.addExpense.plusIconOnCategoryDropdown.click();
+  280 |         await this.selectRandomTaxableEntity();
+  281 |         await this.selectBankAccountIfAvailable();
+  282 |         await this.selectRandomProperty();
+  283 |         await this.selectUnitIfAvailable();
+  284 |         // the closing Unit dropdown panel still overlaps nearby fields for a moment - let it fully close
+  285 |         await this.page.waitForTimeout(1000);
+> 286 |         await this.addExpense.amountInput.fill(expenseDetails.amount);
+      |                                           ^ TimeoutError: locator.fill: Timeout 15000ms exceeded.
+  287 |         await this.selectRandomPayee();
+  288 | 
+  289 |         await this.addExpense.descriptionBoxInput.fill(expenseDetails.description);
+  290 |         await this.addExpense.recordExpenseButton.click();
+  291 | 
+  292 |         return expenseDetails;
+  293 | 
+  294 | 
+  295 | 
+  296 | 
+  297 | 
+  298 | 
+  299 | 
+  300 |     }
+  301 |         
+  302 | 
+  303 | 
+  304 | 
+  305 |    
+  306 | 
+  307 | 
+  308 | 
+  309 | 
+  310 | }
+```

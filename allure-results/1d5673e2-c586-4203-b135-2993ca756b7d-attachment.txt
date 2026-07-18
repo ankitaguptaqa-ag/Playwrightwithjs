@@ -1,0 +1,11 @@
+Selected today: Jul 18 , 2026
+Recorded expense: {
+  description: 'Expense_53573',
+  amount: '200.00',
+  category: 'Maggie_40560',
+  taxableEntity: 'Innago Property Management',
+  bankAccount: 'No bank account available',
+  property: 'Bugs of line item added',
+  unit: 'No unit available',
+  payee: 'ABC Maintenance Services 4'
+}

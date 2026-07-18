@@ -1,0 +1,18 @@
+Selected today: Jul 18 , 2026
+Dropdown has 0 option(s) available
+Picked option 0: "Innago Property Management"
+Dropdown has 92 option(s) available
+Picked option 62: "New_Hold"
+No units available for this property - skipping
+Dropdown has 147 option(s) available
+Picked option 14: "a a"
+Recorded expense: {
+  description: 'Expense_33774',
+  amount: '200.00',
+  category: 'Maggie_37104',
+  taxableEntity: 'Innago Property Management',
+  bankAccount: 'No items found',
+  property: 'New_Hold',
+  unit: 'No items found',
+  payee: 'a a'
+}

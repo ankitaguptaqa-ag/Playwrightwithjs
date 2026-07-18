@@ -1,0 +1,11 @@
+Selected today: Jul 18 , 2026
+Recorded expense: {
+  description: 'Expense_87604',
+  amount: '200.00',
+  category: 'Maggie_35024',
+  taxableEntity: 'Innago Property Management',
+  bankAccount: 'No items found',
+  property: 'Aggi',
+  unit: 'No items found',
+  payee: 'Name 1'
+}
