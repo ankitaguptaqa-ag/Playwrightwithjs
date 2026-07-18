@@ -1,0 +1,18 @@
+Selected today: Jul 18 , 2026
+Dropdown has 6 option(s) available
+Picked option 4: "test3"
+Dropdown has 92 option(s) available
+Picked option 81: "sss"
+No units available for this property - skipping
+Dropdown has 147 option(s) available
+Picked option 80: "nsbvd s"
+Recorded expense: {
+  description: 'Expense_33824',
+  amount: '200.00',
+  category: 'Maggie_31196',
+  taxableEntity: 'test3',
+  bankAccount: 'No items found',
+  property: 'sss',
+  unit: 'No items found',
+  payee: 'nsbvd s'
+}

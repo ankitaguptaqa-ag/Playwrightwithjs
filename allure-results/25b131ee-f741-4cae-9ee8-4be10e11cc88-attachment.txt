@@ -1,0 +1,20 @@
+Selected today: Jul 18 , 2026
+Dropdown has 6 option(s) available
+Picked option 1: "Merlin9"
+Dropdown has 1 option(s) available
+Picked option 0: "Plaid, Saving | xxxx-1111"
+Dropdown has 92 option(s) available
+Picked option 8: "additional fess new"
+No units available for this property - skipping
+Dropdown has 149 option(s) available
+Picked option 66: "Muhammad Hamza"
+Recorded expense: {
+  description: 'Expense_12543',
+  amount: '200.00',
+  category: 'Maggie_35302',
+  taxableEntity: 'Merlin9',
+  bankAccount: 'Plaid, Saving | xxxx-1111',
+  property: 'additional fess new',
+  unit: 'No items found',
+  payee: 'Muhammad Hamza'
+}

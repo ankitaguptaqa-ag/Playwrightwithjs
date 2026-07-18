@@ -1,12 +1,16 @@
 import { TestData } from "../../mocks/common/expenseTestData.js";
+import { Calendar } from "../../utils/calendar.js";
 
 
 
-export class ExpensePage {    
+
+
+export class ExpensePage {
     constructor(page) {
         this.page = page;
+        this.calendar = new Calendar(page);
 
-        
+
         this.expenseButton = page.locator('img[alt="expenses"]');
         this.addExpenseButton = page.locator('//span[contains(text()," Add Expense")]');
 
@@ -72,10 +76,19 @@ export class ExpensePage {
             unitDropdown: page.locator('//in-single-expense//ng-select[(@id="unit") or (.//input[@id="unit"])]'),
             payeeDropdown: page.locator('//in-single-expense//ng-select[@id="payee"]'),
             descriptionBoxInput: page.locator('#description'),
-            amountInput: page.locator('//input[@data-id="amount"]'),
-            recordExpenseButton: page.locator('#sidepanel-primary-button'),
-            cancelExpenseButton: page.locator('#sidepanel-secondary-button'),
+            amountInput: page.locator('//input[@id="amount"]'),
+            recordExpenseButton: page.locator('//button[@id ="record-expense-button"]'),
+            cancelExpenseButton: page.locator('//button[@id ="cancel-record-expense-button"]'),
             fileInput: page.locator('in-single-expense input[type="file"]'),
+            categorySearchInput: page.locator('//input[@placeholder="Search or add category"]'),
+            plusIconOnCategoryDropdown: page.locator('#add-category-button'),
+            bankAccountDropdown: page.locator('ng-select#bankAccount'),
+            noBankItemsFound: page.locator('//ng-dropdown-panel//div[contains(text(),"No items found")]'),
+            noItemsFound: page.locator('//ng-dropdown-panel//div[contains(text(),"No items found")]'),
+            descriptionLabel: page.locator('//label[contains(text(),"Description")]'),
+            getExpenseListInTable:(description) =>
+                page.locator(`//in-expense-list-web//table//tbody//tr//td[contains(text(), "${description}")]`),
+
         };
 
 
@@ -138,11 +151,33 @@ export class ExpensePage {
         return this.page.locator(`//ng-dropdown-panel//div[@role="option"]//span[normalize-space()="${stateName}"]`);
     }
 
+    // async isPayeeInTable(vendorName) {
+    //     //await  this.clickManageePayee();
+    //     // await this.managePayeeForm.searchPayee.fill(vendorName);
+    //     // const row = this.page.locator(`//in-manage-payee-desktop-view//table//tbody/tr/td[1][contains(text(), "${vendorName}")]`);
+    //     // await row.waitFor({ state: 'visible', timeout: 20000 });
+    //     // return await row.innerText();
+    // }
+
     async isPayeeInTable(vendorName) {
-        const row = this.page.locator(`//in-manage-payee-desktop-view//table//tbody/tr/td[1][contains(text(), "${vendorName}")]`);
-        await row.waitFor({ state: 'visible', timeout: 20000 });
-        return await row.innerText();
+    const isManagePayeeOpen = await this.managePayeeForm.searchPayee.isVisible();
+    if (!isManagePayeeOpen) {
+        await this.clickManageePayee();
     }
+    await this.managePayeeForm.searchPayee.fill(vendorName);
+    const row = this.page.locator(`//in-manage-payee-desktop-view//table//tbody/tr/td[1][contains(text(), "${vendorName}")]`);
+    await row.waitFor({ state: 'visible', timeout: 20000 });
+    return await row.innerText();
+    }
+
+    async inListPageIsExpenseInTable(description) {
+        const row = this.addExpense.getExpenseListInTable(description);
+        await row.waitFor({ state: 'visible', timeout: 20000 });
+        return await row.isVisible();
+    }
+
+
+
 
     async addNewPayee (){
         const details = {
@@ -187,8 +222,100 @@ export class ExpensePage {
     //**
     //  Add single expense flow and function writing*/
 
+    async selectRandomOptionFromOpenDropdown(dropdownLocator) {
+        const options = this.page.locator('//ng-dropdown-panel//div[@role="option"]');
+        await options.first().waitFor({ state: 'visible', timeout: 5000 });
+        const count = await options.count();
+        console.log(`Dropdown has ${count} option(s) available`);
+        const randomIndex = Math.floor(Math.random() * count);
+        const selectedOption = options.nth(randomIndex);
+        const selectedText = await selectedOption.innerText();
+        console.log(`Picked option ${randomIndex}: "${selectedText}"`);
+        await selectedOption.click();
+
+        // some dropdown panels don't auto-close after selecting - force it shut if it's still open
+        const stillOpen = await this.page.locator('//ng-dropdown-panel').isVisible();
+        if (stillOpen) {
+            console.log('Panel still open after selecting - closing it now');
+            await dropdownLocator.click();
+        }
+
+        return selectedText;
+    }
+
+    async selectRandomTaxableEntity() {
+        await this.addExpense.taxableEntityDropdown.click();
+        return await this.selectRandomOptionFromOpenDropdown(this.addExpense.taxableEntityDropdown);
+    }
+
+    async selectBankAccountIfAvailable() {
+        await this.addExpense.bankAccountDropdown.click();
+
+        await this.page.waitForTimeout(500);
+        const isEmpty = await this.addExpense.noBankItemsFound.isVisible();
+        if(isEmpty){
+            //no bank account linked to this taxable entity, so we can skip selecting a bank account
+            await this.addExpense.bankAccountDropdown.click(); // click the same dropdown again to close it
+            return 'No items found';
+        }
+        return await this.selectRandomOptionFromOpenDropdown(this.addExpense.bankAccountDropdown);
+    }
+
+    async selectRandomProperty() {
+        await this.addExpense.propertyDropdown.click();
+        return await this.selectRandomOptionFromOpenDropdown(this.addExpense.propertyDropdown);
+    }
+
+    async selectUnitIfAvailable() {
+        await this.addExpense.unitDropdown.click();
+
+        await this.page.waitForTimeout(500);
+        const isEmpty = await this.addExpense.noItemsFound.isVisible();
+
+        if (isEmpty) {
+            console.log('No units available for this property - skipping');
+            await this.addExpense.unitDropdown.click(); // click the same dropdown again to close it
+            return 'No items found';
+        }
+
+        console.log('Units are available - selecting one at random');
+        return await this.selectRandomOptionFromOpenDropdown(this.addExpense.unitDropdown);
+    }
+
+    async selectRandomPayee() {
+        await this.addExpense.payeeDropdown.click();
+        return await this.selectRandomOptionFromOpenDropdown(this.addExpense.payeeDropdown);
+    }
+
+
     async recordSingleExpense() {
-        
+        await this.addExpenseButton.click();
+        await this.addExpense.singleExpenseHeading.waitFor({ state: 'visible', timeout: 5000 });
+        const expenseDetails = {
+            description: `Expense_${TestData.randomNumber(5)}`,
+            amount: '200.00',
+            category: `Maggie_${TestData.randomNumber(5)}`,
+        };
+
+        await this.addExpense.calendarIcon.click();
+        await this.calendar.selectToday();
+        await this.addExpense.categoryDropdown.click();
+        await this.addExpense.categorySearchInput.fill(expenseDetails.category);
+        await this.addExpense.plusIconOnCategoryDropdown.click();
+        expenseDetails.taxableEntity = await this.selectRandomTaxableEntity();
+        expenseDetails.bankAccount = await this.selectBankAccountIfAvailable();
+        expenseDetails.property = await this.selectRandomProperty();
+        expenseDetails.unit = await this.selectUnitIfAvailable();
+        // the closing Unit dropdown panel still overlaps nearby fields for a moment - let it fully close
+        await this.page.waitForTimeout(1000);
+        await this.addExpense.amountInput.fill(expenseDetails.amount);
+        expenseDetails.payee = await this.selectRandomPayee();
+        await this.addExpense.descriptionBoxInput.fill(expenseDetails.description);
+        await this.addExpense.recordExpenseButton.click();
+        // let the submission complete (panel close, expense list refresh) before moving on
+        await this.page.waitForTimeout(2000);
+        console.log('Recorded expense:', expenseDetails);
+        return expenseDetails;
 
     }
         
