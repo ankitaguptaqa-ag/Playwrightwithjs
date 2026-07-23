@@ -8,7 +8,7 @@ export const userData = {
                     password: 'Pass@123',
                 },
                 po2: {
-                    userName: '',
+                    userName: 'qa_saumya@yopmail.com',
                     password: 'Pass@123',
                 },
                 po3: {
