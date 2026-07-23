@@ -1,3 +1,6 @@
+import { expect } from '@playwright/test';
+import { TestData } from '../../mocks/common/expenseTestData.js';
+
 export class IncomePage {
     constructor(page) {
         this.page = page;
@@ -70,10 +73,15 @@ export class IncomePage {
             createNewInvoiceBtn: page.locator('//button[contains(text(),"New Invoice")]'),
             cancelBtn: page.locator('//button[text()=" Cancel "]'),
             propertyDropdown: page.locator('div[aria-controls="dropdown-properties"]'),
-            unitDropdown: page.locator('//span[text()="Select Unit"]'),
+            unitDropdown: page.locator('div[aria-controls="dropdown-units"]'),
+            propertyOptions: page.locator('#dropdown-properties label'),
+            unitOptions: page.locator('#dropdown-units label'),
             invoiceTypeDropdown: page.locator('div[aria-controls="dropdown-item-type"]>span'),
-            termDropdown: page.locator('//span[text()="Select Term"]'),
+            invoiceTypeOptions: page.locator('#dropdown-item-type label'),
+            termDropdown: page.locator('div[aria-controls="dropdown-term"]'),
+            termOptions: page.locator('#dropdown-term label'),
             tenantDropdown: page.locator('div[aria-controls="dropdown-tenant"]'),
+            tenantOptions: page.locator('#dropdown-tenant label'),
             selectAllTenants: page.locator('div[aria-controls="dropdown-tenant"]+div>ul>li:nth-of-type(1)>span>label'),
             selectFirstTenant: page.locator('[for="select-tenant-0"]'),
             descriptionInput: page.locator('input[placeholder="Description"]'),
@@ -275,5 +283,124 @@ export class IncomePage {
 
     tenantNameByRow(row) {
         return this.page.locator(`(//p[@data-locator="itemTenantNames"])[${row}]`);
+    }
+
+
+
+
+    //dynamic function:
+    async createNewInvoice() {
+        await this.invoiceCreation.createNewInvoiceBtn.waitFor({ state: 'visible', timeout: 15000 });
+        await this.invoiceCreation.createNewInvoiceBtn.click();
+        await this.invoiceCreation.propertyDropdown.waitFor({ state: 'visible', timeout: 15000 });
+        const propertyName = await this.selectRandomProperty();
+        const unitName = await this.selectRandomUnitIfAvailable();
+
+        // ---- Term (stays disabled until Property + Unit are picked) ----
+        await expect(this.invoiceCreation.termDropdown).not.toHaveAttribute('disabled', { timeout: 10000 });
+        await this.invoiceCreation.termDropdown.click();
+        await this.invoiceCreation.termOptions.first().waitFor({ state: 'visible', timeout: 10000 });
+
+        const termCount = await this.invoiceCreation.termOptions.count();
+        const termIndex = Math.floor(Math.random() * termCount);
+        const termName = await this.invoiceCreation.termOptions.nth(termIndex).innerText();
+
+        await this.invoiceCreation.termOptions.nth(termIndex).click();
+        await this.invoiceCreation.termDropdown.click(); // close
+
+        // ---- Tenant (stays disabled until Term is picked) ----
+        await expect(this.invoiceCreation.tenantDropdown).not.toHaveAttribute('disabled', { timeout: 10000 });
+        await this.invoiceCreation.tenantDropdown.click();
+
+        // index 0 in this list is "Select All Tenants" - use the first real tenant instead
+        await this.invoiceCreation.selectFirstTenant.waitFor({ state: 'visible', timeout: 10000 });
+        const tenantName = await this.invoiceCreation.selectFirstTenant.innerText();
+        await this.invoiceCreation.selectFirstTenant.click();
+
+        await this.invoiceCreation.tenantDropdown.click(); // close
+
+        // ---- Invoice Type ----
+        await this.invoiceCreation.invoiceTypeDropdown.click();
+        await this.invoiceCreation.invoiceTypeOptions.first().waitFor({ state: 'visible', timeout: 10000 });
+
+        const typeCount = await this.invoiceCreation.invoiceTypeOptions.count();
+        const typeIndex = Math.floor(Math.random() * typeCount);
+        const invoiceType = await this.invoiceCreation.invoiceTypeOptions.nth(typeIndex).innerText();
+
+        await this.invoiceCreation.invoiceTypeOptions.nth(typeIndex).click();
+        await this.invoiceCreation.invoiceTypeDropdown.click(); // close
+        await this.page.waitForTimeout(1000); // pause so the selection is visible in headed mode
+
+        // ---- Description, Quantity, Rate, Notes ----
+        const description = `Invoice_${TestData.randomNumber(5)}`;
+        await this.invoiceCreation.descriptionInput.fill(description);
+        await this.invoiceCreation.quantityInput.fill('1');
+        await this.invoiceCreation.rateInput.fill('100');
+        await this.invoiceCreation.notesTextarea.fill(`Notes_${TestData.randomNumber(5)}`);
+        await this.page.waitForTimeout(1000); // pause so the filled fields are visible in headed mode
+
+        console.log(
+            'Selected property:', propertyName,
+            '| unit:', unitName,
+            '| term:', termName,
+            '| tenant:', tenantName,
+            '| invoiceType:', invoiceType,
+            '| description:', description
+        );
+
+        // ---- Submit ----
+        await this.invoiceCreation.createInvoiceBtn.click();
+
+        return { propertyName, unitName, termName, tenantName, invoiceType, description };
+    }
+
+    async selectRandomProperty() {
+        await this.invoiceCreation.propertyDropdown.click();
+        await this.invoiceCreation.propertyOptions.first().waitFor({ state: 'visible' });
+
+        // index 0 is "Select All Properties", not a real property - skip it
+        const count = await this.invoiceCreation.propertyOptions.count();
+        const index = 1 + Math.floor(Math.random() * (count - 1));
+        const option = this.invoiceCreation.propertyOptions.nth(index);
+        const propertyName = await option.innerText();
+
+        await option.click();
+        await this.invoiceCreation.propertyDropdown.click(); // close
+
+        return propertyName;
+    }
+
+
+    async selectRandomUnitIfAvailable() {
+        const toggle = this.invoiceCreation.unitDropdown;
+        const options = this.invoiceCreation.unitOptions;
+
+        // 1. wait for Unit to unlock (disabled until a property is picked), then open it
+        await expect(toggle).not.toHaveAttribute('disabled', { timeout: 10000 });
+        await toggle.click();
+
+        // 2. this property might have zero units - the panel just stays blank,
+        // no "no items found" message like expense_page.js has. So wait up to 5s
+        // for a real option to show up; if none does, there are none.
+        let hasUnits = true;
+        try {
+            await options.first().waitFor({ state: 'visible', timeout: 5000 });
+        } catch {
+            hasUnits = false;
+        }
+
+        // 3. no units - close and stop
+        if (!hasUnits) {
+            await toggle.click();
+            return 'No units available';
+        }
+
+        // 4. units exist - pick one at random
+        const index = Math.floor(Math.random() * await options.count());
+        const unitName = await options.nth(index).innerText();
+        await options.nth(index).click();
+        await toggle.click();
+
+        return unitName;
     }
 }
