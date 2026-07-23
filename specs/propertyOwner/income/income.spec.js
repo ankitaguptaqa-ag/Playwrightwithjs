@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { userData } from '../../mocks/common/userData.js';
-import { LoginPage } from '../../pageObjects/poPortal/login_page.js';
-import { MenuPage } from '../../pageObjects/poPortal/menu_page.js';
-import { IncomePage } from '../../pageObjects/poPortal/income_page.js';
+import { userData } from '../../../mocks/common/userData.js';
+import { LoginPage } from '../../../pageObjects/poPortal/login_page.js';
+import { MenuPage } from '../../../pageObjects/poPortal/menu_page.js';
+import { IncomePage } from '../../../pageObjects/poPortal/income_page.js';
 
 
 
@@ -37,8 +37,10 @@ test.describe('Income Tests - shared login', () => {
         await sharedPage.close();
     });
 
-    test('Verify that the user can navigate to the Income page', async () => {
-        
+    test('Verify that the user can start creating a new invoice', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        await incomePage.createNewInvoice();
+        await expect(incomePage.invoiceCreation.propertyDropdown).toBeVisible();
     });
 
     

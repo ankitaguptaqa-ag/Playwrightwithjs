@@ -8,6 +8,7 @@
     "test": "playwright test",
     "login": "npx playwright test specs/propertyOwner/login/login.spec.js",
     "expenses": "npx playwright test specs/propertyOwner/expenses/expenses.spec.js",
+    "income": "npx playwright test specs/propertyOwner/income/income.spec.js",
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug",
     "test:report": "npx playwright show-report"
