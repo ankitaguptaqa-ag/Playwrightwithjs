@@ -34,6 +34,8 @@ test.describe('Income Tests - shared login', () => {
 
     
     test.afterAll(async () => {
+        const loginPage = new LoginPage(sharedPage);
+        await loginPage.logout();
         await sharedPage.close();
     });
 
@@ -43,5 +45,57 @@ test.describe('Income Tests - shared login', () => {
         await expect(incomePage.invoiceCreation.propertyDropdown).toBeVisible();
     });
 
-    
+    test('Verify that Property, Unit, and Term fields are present on the Create New Invoice form', async () => {
+        const incomePage = new IncomePage(sharedPage);
+
+        await incomePage.invoiceCreation.createNewInvoiceBtn.click();
+        await incomePage.invoiceCreation.propertyDropdown.waitFor({ state: 'visible', timeout: 15000 });
+
+        await expect(incomePage.invoiceCreation.propertyLabel).toBeVisible();
+        await expect(incomePage.invoiceCreation.unitLabel).toBeVisible();
+        await expect(incomePage.invoiceCreation.termLabel).toBeVisible();
+    });
+
+    test('Verify that a newly created invoice can be found via filters on the list page', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+
+        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
+
+        await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
+
+        // grouped view: first click expands the property group, second click opens the invoice
+        await incomePage.listing.tableRows.first().click();
+        await incomePage.listing.tableRows.nth(1).click();
+        await expect(incomePage.detail.propertyName).toHaveText(propertyName);
+    });
+
+    test('Verify that all invoice details fields are visible on the details page', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+
+        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
+
+        // grouped view: first click expands the property group, second click opens the invoice
+        await incomePage.listing.tableRows.first().click();
+        await incomePage.listing.tableRows.nth(1).click();
+
+        await expect(incomePage.detail.propertyName).toHaveText(propertyName);
+        await expect(incomePage.detail.invoiceIdSpan).toBeVisible();
+        await expect(incomePage.detail.subjectText).toBeVisible();
+        await expect(incomePage.detail.sharedByText).toBeVisible();
+        await expect(incomePage.detail.contactAddressText).toBeVisible();
+
+        await expect(incomePage.detail.itemHeader).toBeVisible();
+        await expect(incomePage.detail.descriptionHeader).toBeVisible();
+        await expect(incomePage.detail.quantityHeader).toBeVisible();
+        await expect(incomePage.detail.rateHeader).toBeVisible();
+        await expect(incomePage.detail.amountHeader).toBeVisible();
+        console.log('All invoice details fields are visible on the details page');
+    });
+
 });

@@ -1,0 +1,1 @@
+Selected property: CC via authorise.net | unit: 101 | term: 06/26/2025 - 10/31/2025 | tenant: Test Profile | invoiceType: New Item Type | description: Invoice_9259

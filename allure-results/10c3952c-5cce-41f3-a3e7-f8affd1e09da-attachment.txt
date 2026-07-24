@@ -1,0 +1,1 @@
+Selected property: Green Land Apartment | unit: 1 A | term: 06/05/2026 - 11/30/2026 | tenant: Edward Tenant | invoiceType: Maintenance Request | description: Invoice_94030
