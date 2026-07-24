@@ -1,0 +1,1 @@
+Selected property: lease expire | unit: ghab32 | term: 09/23/2024 - 09/25/2024 | tenant: Gfdsbv Sfdbv | invoiceType: New Item Type | description: Invoice_61249

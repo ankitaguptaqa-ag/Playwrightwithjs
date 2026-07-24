@@ -76,6 +76,9 @@ export class IncomePage {
             unitDropdown: page.locator('div[aria-controls="dropdown-units"]'),
             propertyOptions: page.locator('#dropdown-properties label'),
             unitOptions: page.locator('#dropdown-units label'),
+            propertyLabel: page.locator('//label[contains(text(), "Property")]'),
+            unitLabel: page.locator('//label[contains(text(), "Unit")]'),
+            termLabel: page.locator('//label[contains(text(), "Term")]'),
             invoiceTypeDropdown: page.locator('div[aria-controls="dropdown-item-type"]>span'),
             invoiceTypeOptions: page.locator('#dropdown-item-type label'),
             termDropdown: page.locator('div[aria-controls="dropdown-term"]'),
@@ -293,20 +296,7 @@ export class IncomePage {
         await this.invoiceCreation.createNewInvoiceBtn.waitFor({ state: 'visible', timeout: 15000 });
         await this.invoiceCreation.createNewInvoiceBtn.click();
         await this.invoiceCreation.propertyDropdown.waitFor({ state: 'visible', timeout: 15000 });
-        const propertyName = await this.selectRandomProperty();
-        const unitName = await this.selectRandomUnitIfAvailable();
-
-        // ---- Term (stays disabled until Property + Unit are picked) ----
-        await expect(this.invoiceCreation.termDropdown).not.toHaveAttribute('disabled', { timeout: 10000 });
-        await this.invoiceCreation.termDropdown.click();
-        await this.invoiceCreation.termOptions.first().waitFor({ state: 'visible', timeout: 10000 });
-
-        const termCount = await this.invoiceCreation.termOptions.count();
-        const termIndex = Math.floor(Math.random() * termCount);
-        const termName = await this.invoiceCreation.termOptions.nth(termIndex).innerText();
-
-        await this.invoiceCreation.termOptions.nth(termIndex).click();
-        await this.invoiceCreation.termDropdown.click(); // close
+        const { propertyName, unitName, termName } = await this.selectRandomPropertyWithUnitAndTerm();
 
         // ---- Tenant (stays disabled until Term is picked) ----
         await expect(this.invoiceCreation.tenantDropdown).not.toHaveAttribute('disabled', { timeout: 10000 });
@@ -337,6 +327,13 @@ export class IncomePage {
         await this.invoiceCreation.quantityInput.fill('1');
         await this.invoiceCreation.rateInput.fill('100');
         await this.invoiceCreation.notesTextarea.fill(`Notes_${TestData.randomNumber(5)}`);
+
+        // Due Date can auto-fill based on the random Term picked, sometimes landing outside
+        // the current month - force it to today so the invoice shows up in the listing's
+        // default date-range filter right after creation.
+        const todayStr = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+        await this.invoiceCreation.dueDateInput.fill(todayStr);
+
         await this.page.waitForTimeout(1000); // pause so the filled fields are visible in headed mode
 
         console.log(
@@ -352,6 +349,89 @@ export class IncomePage {
         await this.invoiceCreation.createInvoiceBtn.click();
 
         return { propertyName, unitName, termName, tenantName, invoiceType, description };
+    }
+
+    async filterByProperty(propertyName) {
+        await this.filters.filterCollapse.click();
+
+        await this.filters.propertyDropdown.click();
+        await this.filters.propertySearchInput.fill(propertyName);
+        await this.propertyCheckbox(propertyName).first().click();
+        await this.filters.propertyDropdown.click(); // close
+
+        await this.filters.applyFilterBtn.click();
+        await this.page.waitForTimeout(2000); // let filtered results load
+
+        // stay in the default Grouped by Property view - no need to switch
+        await this.listing.propertyNameFirstRow.waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    async selectRandomPropertyWithUnitAndTerm() {
+        let propertyName;
+        let propertyIndex;
+        let unitName = 'No units available';
+        let termName = 'No terms available';
+
+        while (unitName === 'No units available' || termName === 'No terms available') {
+            // last property didn't have both a unit and a term - uncheck it before trying another
+            if (propertyName) {
+                await this.invoiceCreation.propertyDropdown.click();
+                await this.invoiceCreation.propertyOptions.nth(propertyIndex).click(); // uncheck
+                await this.invoiceCreation.propertyDropdown.click();
+            }
+
+            await this.invoiceCreation.propertyDropdown.click();
+            await this.invoiceCreation.propertyOptions.first().waitFor({ state: 'visible' });
+
+            // index 0 is "Select All Properties", not a real property - skip it
+            const count = await this.invoiceCreation.propertyOptions.count();
+            propertyIndex = 1 + Math.floor(Math.random() * (count - 1));
+            const option = this.invoiceCreation.propertyOptions.nth(propertyIndex);
+            propertyName = await option.innerText();
+
+            await option.click();
+            await this.invoiceCreation.propertyDropdown.click(); // close
+
+            unitName = await this.selectRandomUnitIfAvailable();
+            if (unitName === 'No units available') {
+                continue; // no unit - no point checking term, try a different property
+            }
+
+            termName = await this.selectRandomTermIfAvailable();
+        }
+
+        return { propertyName, unitName, termName };
+    }
+
+    async selectRandomTermIfAvailable() {
+        const toggle = this.invoiceCreation.termDropdown;
+        const options = this.invoiceCreation.termOptions;
+
+        // Term stays disabled until Property + Unit are picked
+        await expect(toggle).not.toHaveAttribute('disabled', { timeout: 10000 });
+        await toggle.click();
+
+        // some property/unit combos have no term (and no tenant) - panel just stays blank
+        let hasTerms = true;
+        try {
+            await options.first().waitFor({ state: 'visible', timeout: 5000 });
+        } catch {
+            hasTerms = false;
+        }
+
+        if (!hasTerms) {
+            await toggle.click(); // close, nothing to pick
+            return 'No terms available';
+        }
+
+        const count = await options.count();
+        const index = Math.floor(Math.random() * count);
+        const termName = await options.nth(index).innerText();
+
+        await options.nth(index).click();
+        await toggle.click(); // close
+
+        return termName;
     }
 
     async selectRandomProperty() {

@@ -43,5 +43,31 @@ test.describe('Income Tests - shared login', () => {
         await expect(incomePage.invoiceCreation.propertyDropdown).toBeVisible();
     });
 
-    
+    test('Verify that Property, Unit, and Term fields are present on the Create New Invoice form', async () => {
+        const incomePage = new IncomePage(sharedPage);
+
+        await incomePage.invoiceCreation.createNewInvoiceBtn.click();
+        await incomePage.invoiceCreation.propertyDropdown.waitFor({ state: 'visible', timeout: 15000 });
+
+        await expect(incomePage.invoiceCreation.propertyLabel).toBeVisible();
+        await expect(incomePage.invoiceCreation.unitLabel).toBeVisible();
+        await expect(incomePage.invoiceCreation.termLabel).toBeVisible();
+    });
+
+    test('Verify that a newly created invoice can be found via filters on the list page', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+
+        const { propertyName } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByProperty(propertyName);
+
+        await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
+
+        // grouped view: first click expands the property group, second click opens the invoice
+        await incomePage.listing.tableRows.first().click();
+        await incomePage.listing.tableRows.nth(1).click();
+        await expect(incomePage.detail.propertyName).toHaveText(propertyName);
+    });
+
 });
