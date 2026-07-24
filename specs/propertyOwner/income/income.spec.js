@@ -34,6 +34,8 @@ test.describe('Income Tests - shared login', () => {
 
     
     test.afterAll(async () => {
+        const loginPage = new LoginPage(sharedPage);
+        await loginPage.logout();
         await sharedPage.close();
     });
 
@@ -58,9 +60,9 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
-        await incomePage.filterByProperty(propertyName);
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
         await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
 
@@ -68,6 +70,32 @@ test.describe('Income Tests - shared login', () => {
         await incomePage.listing.tableRows.first().click();
         await incomePage.listing.tableRows.nth(1).click();
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
+    });
+
+    test('Verify that all invoice details fields are visible on the details page', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+
+        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
+
+        // grouped view: first click expands the property group, second click opens the invoice
+        await incomePage.listing.tableRows.first().click();
+        await incomePage.listing.tableRows.nth(1).click();
+
+        await expect(incomePage.detail.propertyName).toHaveText(propertyName);
+        await expect(incomePage.detail.invoiceIdSpan).toBeVisible();
+        await expect(incomePage.detail.subjectText).toBeVisible();
+        await expect(incomePage.detail.sharedByText).toBeVisible();
+        await expect(incomePage.detail.contactAddressText).toBeVisible();
+
+        await expect(incomePage.detail.itemHeader).toBeVisible();
+        await expect(incomePage.detail.descriptionHeader).toBeVisible();
+        await expect(incomePage.detail.quantityHeader).toBeVisible();
+        await expect(incomePage.detail.rateHeader).toBeVisible();
+        await expect(incomePage.detail.amountHeader).toBeVisible();
+        console.log('All invoice details fields are visible on the details page');
     });
 
 });

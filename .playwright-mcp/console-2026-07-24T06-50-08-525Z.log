@@ -1,0 +1,133 @@
+[    1811ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[    2336ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/core (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2337ms] [WARNING] Unsatisfied version 7.8.2 from po-app of shared singleton module rxjs (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2339ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2340ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/platform-browser (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2340ms] [WARNING] Unsatisfied version 15.2.2 from po-app of shared singleton module ngx-toastr (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2340ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/animations (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2341ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common/http (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2341ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/router (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2342ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/forms (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2343ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/store (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    2343ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/effects (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    3010ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: intercomAppId @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    3045ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    3045ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    3053ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    3053ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    4459ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api-qa-my.innago.com/identity-auth/identity/setting:0
+[    4470ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://api-qa-my.innago.com/api/Users/Identity:0
+[    5065ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[    8215ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[    8242ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/core (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8242ms] [WARNING] Unsatisfied version 7.8.2 from po-app of shared singleton module rxjs (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8243ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8243ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/platform-browser (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8243ms] [WARNING] Unsatisfied version 15.2.2 from po-app of shared singleton module ngx-toastr (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8243ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/animations (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8244ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common/http (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8244ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/router (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8244ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/forms (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8244ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/store (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8245ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/effects (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[    8254ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: intercomAppId @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    8257ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    8257ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    8258ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[    8258ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[   10287ms] [WARNING] Notifications permission has been blocked as the user has dismissed the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ https://qa-property-owner.innago.com/finance/invoices/list/:0
+[   10288ms] [LOG] denied @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[   10805ms] [LOG] rolledout_help.intercom true @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[   11713ms] [INFO] [2026-07-24T06:50:20.237Z] Information: WebSocket connected to wss://qa-sockets.innago.com/signalr?id=NthwtdLGXRu0WvorXk72aA. @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[   12009ms] [LOG] ChatKitty Session Params: p @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[   31005ms] [ERROR] Access to fetch at 'https://api.ipify.org/?format=json' from origin 'https://qa-property-owner.innago.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://qa-property-owner.innago.com/finance/invoices/list/:0
+[   31006ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.ipify.org/?format=json:0
+[   38552ms] [ERROR] The script has an unsupported MIME type ('text/html'). @ :0
+[   38554ms] [ERROR] Service worker registration failed with: SecurityError: Failed to register a ServiceWorker for scope ('https://qa-property-owner.innago.com/') with script ('https://qa-property-owner.innago.com/notification-worker.js'): The script has an unsupported MIME type ('text/html'). @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  115398ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[  115432ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/core (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115432ms] [WARNING] Unsatisfied version 7.8.2 from po-app of shared singleton module rxjs (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115433ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115433ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/platform-browser (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115433ms] [WARNING] Unsatisfied version 15.2.2 from po-app of shared singleton module ngx-toastr (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115433ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/animations (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115433ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common/http (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115434ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/router (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115434ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/forms (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115434ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/store (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115434ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/effects (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  115447ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: intercomAppId @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  115452ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  115452ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  115453ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  115453ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  118223ms] [LOG] denied @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  118223ms] [WARNING] Notifications permission has been blocked as the user has dismissed the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ https://qa-property-owner.innago.com/finance/invoices/create:0
+[  118746ms] [LOG] rolledout_help.intercom true @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  118816ms] [LOG] ChatKitty Session Params: p @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  120297ms] [INFO] [2026-07-24T06:52:08.821Z] Information: WebSocket connected to wss://qa-sockets.innago.com/signalr?id=_ZSu8_n966EpTd8Lejn5OQ. @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  122548ms] [WARNING] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: true, _useUTC: true, _l: undefined, _i: 2026/07/24, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at t.createFromInputFallback (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:372107)
+    at ra (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:392629)
+    at la (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:392680)
+    at fr (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:392988)
+    at ua (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:393271)
+    at pr (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:393333)
+    at t.V [as utc] (https://qa-property-owner.innago.com/3764.582be87174185cb4.js:1:369882)
+    at n.ngOnChanges (https://qa-property-owner.innago.com/4215.c15a423cdc923f9d.js:1:8385388)
+    at n.Mg (https://qa-property-owner.innago.com/5939.58c8fd5e71e0ab29.js:1:19121)
+    at qg (https://qa-property-owner.innago.com/5939.58c8fd5e71e0ab29.js:1:23901) @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  136723ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[  136759ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/core (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136759ms] [WARNING] Unsatisfied version 7.8.2 from po-app of shared singleton module rxjs (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136760ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136760ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/platform-browser (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136760ms] [WARNING] Unsatisfied version 15.2.2 from po-app of shared singleton module ngx-toastr (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136760ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/animations (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136760ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common/http (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136761ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/router (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136761ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/forms (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136761ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/store (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136762ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/effects (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  136774ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: intercomAppId @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  136777ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  136777ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  136778ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  136778ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  138835ms] [WARNING] Notifications permission has been blocked as the user has dismissed the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ https://qa-property-owner.innago.com/finance/invoices/list/:0
+[  138835ms] [LOG] denied @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  139189ms] [ERROR] Access to fetch at 'https://api.ipify.org/?format=json' from origin 'https://qa-property-owner.innago.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://qa-property-owner.innago.com/finance/invoices/list/:0
+[  139189ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.ipify.org/?format=json:0
+[  139360ms] [LOG] rolledout_help.intercom true @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  139422ms] [LOG] ChatKitty Session Params: p @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  140371ms] [INFO] [2026-07-24T06:52:28.896Z] Information: WebSocket connected to wss://qa-sockets.innago.com/signalr?id=utJkAXUjkCD_pjuZv85KyA. @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  167074ms] [ERROR] The script has an unsupported MIME type ('text/html'). @ :0
+[  167076ms] [ERROR] Service worker registration failed with: SecurityError: Failed to register a ServiceWorker for scope ('https://qa-property-owner.innago.com/') with script ('https://qa-property-owner.innago.com/notification-worker.js'): The script has an unsupported MIME type ('text/html'). @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  178447ms] [WARNING] Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading @ https://maps.googleapis.com/maps/api/js?key=AIzaSyBjRZCoAbS_k0MRdrtmdT2wm0Hqspn8O5o&libraries=places:2586
+[  178483ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/core (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178483ms] [WARNING] Unsatisfied version 7.8.2 from po-app of shared singleton module rxjs (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/platform-browser (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.2 from po-app of shared singleton module ngx-toastr (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/animations (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/common/http (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178484ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/router (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178485ms] [WARNING] Unsatisfied version 15.2.10 from po-app of shared singleton module @angular/forms (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178485ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/store (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178485ms] [WARNING] Unsatisfied version 15.4.0 from po-app of shared singleton module @ngrx/effects (required ^auto) @ https://qa-property-owner.innago.com/main.ab0232616b93b5a3.js:0
+[  178497ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: intercomAppId @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  178500ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  178500ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  178502ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logLevel @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  178503ms] [WARNING] Environment.configService is not initialized. Returning undefined for key: logUrl @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  180566ms] [WARNING] Notifications permission has been blocked as the user has dismissed the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ https://qa-property-owner.innago.com/finance/invoices/list/:0
+[  180566ms] [LOG] denied @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  181092ms] [LOG] rolledout_help.intercom true @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  181161ms] [LOG] ChatKitty Session Params: p @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  182331ms] [INFO] [2026-07-24T06:53:10.855Z] Information: WebSocket connected to wss://qa-sockets.innago.com/signalr?id=QwF1iOqaw_Xl5LxXE4cWvg. @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  192034ms] [LOG] 122.161.72.85 @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0
+[  208793ms] [ERROR] The script has an unsupported MIME type ('text/html'). @ :0
+[  208795ms] [ERROR] Service worker registration failed with: SecurityError: Failed to register a ServiceWorker for scope ('https://qa-property-owner.innago.com/') with script ('https://qa-property-owner.innago.com/notification-worker.js'): The script has an unsupported MIME type ('text/html'). @ https://qa-property-owner.innago.com/1886.4f229667e93ec0e3.js:0

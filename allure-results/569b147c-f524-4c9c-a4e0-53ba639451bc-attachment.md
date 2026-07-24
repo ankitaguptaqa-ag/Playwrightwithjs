@@ -1,0 +1,63 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: propertyOwner/income/income.spec.js >> Income Tests - shared login >> Verify that all invoice details fields are visible on the details page
+- Location: specs/propertyOwner/income/income.spec.js:73:10
+
+# Error details
+
+```
+TimeoutError: page.waitForURL: Timeout 30000ms exceeded.
+=========================== logs ===========================
+waiting for navigation until "load"
+  navigated to "https://qa-auth.innago.com/login?code=7wLeV0uyi47HS7F01CR1cibVBN3NKhZ3_sFhQeicHjwt-&state=R1JtY19nVDFUTzVqWnhWOEVmT3VtZlpWMXpYWllwMHNMa2hkQURvbGp1Xw%3D%3D"
+  navigated to "https://qa-auth.innago.com/login?code=7wLeV0uyi47HS7F01CR1cibVBN3NKhZ3_sFhQeicHjwt-&state=R1JtY19nVDFUTzVqWnhWOEVmT3VtZlpWMXpYWllwMHNMa2hkQURvbGp1Xw%3D%3D"
+  navigated to "https://qa-auth.innago.com/login"
+  navigated to "https://qa-property-owner.innago.com/"
+============================================================
+```
+
+# Test source
+
+```ts
+  1  | export class LoginPage {
+  2  |     constructor(page) {
+  3  |         this.page = page;
+  4  |         
+  5  |         this.emailInput = page.locator('#username');
+  6  |         this.passwordInput = page.locator('#password');
+  7  |         this.loginButton = page.locator('button[data-action-button-primary="true"]');
+  8  |         this.logoutButton = page.locator('img[alt="logout"]');
+  9  | 
+  10 |     }
+  11 | 
+  12 |     async logout(){
+  13 |         await this.logoutButton.waitFor({state : 'visible' , timeout : 10000});
+  14 |         await this.logoutButton.click();
+  15 |         await this.page.waitForURL((url) => url.toString().includes('qa-auth'),{timeout : 30000});
+  16 | 
+  17 |     }
+  18 | 
+  19 |     async login(email, password) {
+  20 |         await this.emailInput.waitFor({ state: 'visible', timeout: 30000 });
+  21 |         await this.emailInput.fill(email);
+  22 |         await this.loginButton.click();
+  23 |         await this.passwordInput.waitFor({state : 'visible' , timeout : 10000});
+  24 |         await this.passwordInput.fill(password);
+  25 |         await this.loginButton.click();
+> 26 |         await this.page.waitForURL((url) => url.toString().includes('dashboard'),{timeout : 30000});
+     |                         ^ TimeoutError: page.waitForURL: Timeout 30000ms exceeded.
+  27 |     }
+  28 | 
+  29 |     async goToLoginPage() {
+  30 |         await this.page.goto('/');
+  31 |     }
+  32 | 
+  33 | 
+  34 | }
+```

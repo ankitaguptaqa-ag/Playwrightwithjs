@@ -121,7 +121,7 @@ export class IncomePage {
             processingFirstRow: page.locator('tbody tr>td:nth-of-type(9)>p'),
             paidFirstRow: page.locator('tbody tr>td:nth-of-type(10)>p'),
             balanceFirstRow: page.locator('tbody tr>td:nth-of-type(11)>p'),
-            propertyNameFirstRow: page.locator('tbody>tr>td:nth-of-type(2)>div>p'),
+            propertyNameFirstRow: page.locator('tbody>tr>td:nth-of-type(2)>div>p').first(),
             unitNameFirstRow: page.locator('tbody>tr>td:nth-of-type(3)>p[data-locator="listingUnitName"]'),
 
 
@@ -140,6 +140,27 @@ export class IncomePage {
             invoiceId: page.locator('//invoicedetail/div/div[2]/div[1]/div/div[1]/h2/span'),
             propertyName: page.locator('span[data-locator="propertyName"]'),
             unitName: page.locator('span[data-locator="unitName"]'),
+            subjectText: page.locator('//p[contains(text(), "Subject")]'),
+            // some invoices show "Shared By", others show "Sent To" for the same field
+            // some invoices show "Shared By", others show "Sent To" for the same field
+            sharedByText: page.locator('//p[contains(text(), "Shared By") or contains(text(), "Sent To")]'),
+
+            contactAddressText: page.locator('//p[contains(text(), "Contact Address")]'),
+
+            
+            itemHeader: page.locator('table.table-invoice-detail th:has-text("Item")'),
+            descriptionHeader: page.locator('table.table-invoice-detail th:has-text("Description")'),
+            quantityHeader: page.locator('table.table-invoice-detail th:has-text("Quantity")'),
+            rateHeader: page.locator('table.table-invoice-detail th:has-text("Rate")'),
+            amountHeader: page.locator('table.table-invoice-detail th:has-text("Amount")').first(),
+
+            
+            paymentsReceivedHeading: page.locator('//p[contains(text(), "Payments Received")]'),
+            totalDueText: page.locator('//p[contains(text(), "Total Due")]'),
+            totalPaidText: page.locator('//p[contains(text(), "Total Paid")]'),
+            remainingBalanceText: page.locator('//p[contains(text(), "Remaining Balance")]'),
+        
+
             totalOverdueAmount: page.locator('p[data-locator="overDueInvoiceReportingModel"]'),
             recordPaymentBtn: page.locator('div[container="body"]>button[data-locator="recordPaymentBtn"]'),
             recordCCPaymentBtn: page.locator('//button[text() = " Credit Card Payment "]'),
@@ -358,6 +379,33 @@ export class IncomePage {
         await this.filters.propertySearchInput.fill(propertyName);
         await this.propertyCheckbox(propertyName).first().click();
         await this.filters.propertyDropdown.click(); // close
+
+        await this.filters.applyFilterBtn.click();
+        await this.page.waitForTimeout(2000); // let filtered results load
+
+        // stay in the default Grouped by Property view - no need to switch
+        await this.listing.propertyNameFirstRow.waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    async filterByPropertyAndUnit(propertyName, unitName) {
+        await this.filters.filterCollapse.click();
+
+        await this.filters.propertyDropdown.click();
+        await this.filters.propertySearchInput.fill(propertyName);
+        await this.propertyCheckbox(propertyName).first().click();
+        await this.filters.propertyDropdown.click(); // close
+
+        // Unit filter defaults to "All" checked - uncheck it first so only the
+        // one unit we pick ends up selected, otherwise a property with multiple
+        // units/invoices returns more than one row and it's unclear which is ours.
+        await this.filters.unitDropdown.click();
+        await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').waitFor({ state: 'visible', timeout: 10000 });
+        await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').click();
+
+        const unitOption = this.page.locator(`//ng-dropdown-panel//label[contains(text(), "${unitName}")]`);
+        await unitOption.waitFor({ state: 'visible', timeout: 10000 });
+        await unitOption.click();
+        await this.filters.unitDropdown.click(); // close
 
         await this.filters.applyFilterBtn.click();
         await this.page.waitForTimeout(2000); // let filtered results load
