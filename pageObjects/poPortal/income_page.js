@@ -103,6 +103,7 @@ export class IncomePage {
             createInvoiceBtn: page.locator('//button[@data-locator="saveButton"]'),
             deleteBtn: page.locator('//button[@data-locator="invoiceEdit"]/parent::div/following-sibling::div/button'),
             confirmationYesBtn: page.locator('button#confirmation-yes'),
+            saveButton: page.locator('//button[data-locator="submitButton"]'),
         };
 
 
@@ -141,10 +142,9 @@ export class IncomePage {
             propertyName: page.locator('span[data-locator="propertyName"]'),
             unitName: page.locator('span[data-locator="unitName"]'),
             subjectText: page.locator('//p[contains(text(), "Subject")]'),
-            // some invoices show "Shared By", others show "Sent To" for the same field
+            subjectValue: page.locator('//p[contains(text(), "Subject")]/following-sibling::p[1]'),
             // some invoices show "Shared By", others show "Sent To" for the same field
             sharedByText: page.locator('//p[contains(text(), "Shared By") or contains(text(), "Sent To")]'),
-
             contactAddressText: page.locator('//p[contains(text(), "Contact Address")]'),
 
             
@@ -153,6 +153,8 @@ export class IncomePage {
             quantityHeader: page.locator('table.table-invoice-detail th:has-text("Quantity")'),
             rateHeader: page.locator('table.table-invoice-detail th:has-text("Rate")'),
             amountHeader: page.locator('table.table-invoice-detail th:has-text("Amount")').first(),
+            // first item row, Rate is the 4th cell (Item, Description, Quantity, Rate, Amount)
+            rateValue: page.locator('table.table-invoice-detail tbody tr').first().locator('td').nth(3),
 
             
             paymentsReceivedHeading: page.locator('//p[contains(text(), "Payments Received")]'),
@@ -412,6 +414,17 @@ export class IncomePage {
 
         // stay in the default Grouped by Property view - no need to switch
         await this.listing.propertyNameFirstRow.waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    async editInvoice({ subject, rate }) {
+        await this.detail.editInvoiceBtn.click();
+
+        // the edit panel reuses the same form fields as Create New Invoice
+        await this.invoiceCreation.descriptionInput.waitFor({ state: 'visible', timeout: 10000 });
+        await this.invoiceCreation.descriptionInput.fill(subject);
+        await this.invoiceCreation.rateInput.fill(String(rate));
+
+        await this.detail.saveButton.click();
     }
 
     async selectRandomPropertyWithUnitAndTerm() {
