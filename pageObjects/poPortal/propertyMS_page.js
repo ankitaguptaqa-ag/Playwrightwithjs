@@ -338,6 +338,8 @@ export class PropertiesPage {
         await this.lease_TermDetails.first_Invoice_Date_Input.selectOption({ index: 1 });
         await this.page.waitForTimeout(2000);
         await this.add_TenantDetails.add_Tenant_Button.click();
+        await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
+        await this.add_TenantDetails.add_New_Tenant_Button.click();
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1500);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
@@ -419,6 +421,8 @@ export class PropertiesPage {
         await this.add_Additional_Fees_Section.create_Button.click();
         await this.page.waitForTimeout(1500);
         await this.add_TenantDetails.add_Tenant_Button.click();
+        await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
+        await this.add_TenantDetails.add_New_Tenant_Button.click();
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
@@ -522,6 +526,8 @@ export class PropertiesPage {
         await this.fixed_TermDetails.first_Invoice_Date_Input_FixedTerm.selectOption({ index: 1 });
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.add_Tenant_Button.click();
+        await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
+        await this.add_TenantDetails.add_New_Tenant_Button.click();
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
