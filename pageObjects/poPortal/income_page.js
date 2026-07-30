@@ -87,9 +87,10 @@ export class IncomePage {
             tenantOptions: page.locator('#dropdown-tenant label'),
             selectAllTenants: page.locator('div[aria-controls="dropdown-tenant"]+div>ul>li:nth-of-type(1)>span>label'),
             selectFirstTenant: page.locator('[for="select-tenant-0"]'),
-            descriptionInput: page.locator('input[placeholder="Description"]'),
-            quantityInput: page.locator('tbody>tr>td:nth-of-type(3) input[data-locator="calculateAmount"]'),
-            rateInput: page.locator('tbody>tr>td:nth-of-type(4) input[data-locator="calculateAmount"]'),
+            // .first() guards against invoices with multiple line items (e.g. Rent + a Late Fee Charge row)
+            descriptionInput: page.locator('input[placeholder="Description"]').first(),
+            quantityInput: page.locator('tbody>tr>td:nth-of-type(3) input').first(),
+            rateInput: page.locator('tbody>tr>td:nth-of-type(4) input').first(),
             addItemLink: page.locator('a[data-locator="addItem"]'),
             notesTextarea: page.locator('textarea[data-locator="additionalNotes"]'),
             subAmountSpan: page.locator('span[data-locator="totalAmount"]'),
@@ -103,7 +104,6 @@ export class IncomePage {
             createInvoiceBtn: page.locator('//button[@data-locator="saveButton"]'),
             deleteBtn: page.locator('//button[@data-locator="invoiceEdit"]/parent::div/following-sibling::div/button'),
             confirmationYesBtn: page.locator('button#confirmation-yes'),
-            saveButton: page.locator('//button[data-locator="submitButton"]'),
         };
 
 
@@ -157,11 +157,12 @@ export class IncomePage {
             rateValue: page.locator('table.table-invoice-detail tbody tr').first().locator('td').nth(3),
 
             
-            paymentsReceivedHeading: page.locator('//p[contains(text(), "Payments Received")]'),
-            totalDueText: page.locator('//p[contains(text(), "Total Due")]'),
-            totalPaidText: page.locator('//p[contains(text(), "Total Paid")]'),
-            remainingBalanceText: page.locator('//p[contains(text(), "Remaining Balance")]'),
-        
+            paymentsReceivedHeading: page.locator('//label[contains(text(), "Payments Received")]'),
+            totalDueText: page.locator('span[data-locator="totalDue"]'),
+            totalPaidText: page.locator('span[data-locator="totalPaidAmount"]'),
+            remainingBalanceText: page.locator('span[data-locator="balanceAmount"]'),
+            paymentAmountValue: page.locator('td[data-locator="NetAmount"]').first(),
+
 
             totalOverdueAmount: page.locator('p[data-locator="overDueInvoiceReportingModel"]'),
             recordPaymentBtn: page.locator('div[container="body"]>button[data-locator="recordPaymentBtn"]'),
@@ -170,6 +171,7 @@ export class IncomePage {
             remindBtn: page.locator('button[data-locator="sendReminders"]'),
             addNotesBtn: page.locator('button[data-locator="getNotesDetails"]'),
             editInvoiceBtn: page.locator('button[data-locator="invoiceEdit"]'),
+            saveButton: page.locator('button[data-locator="submitButton"]').first(),
             refundDepositBtn: page.locator('//form[@name="EditInvoiceForm"]//div/button[text()=" Refund Deposit "]'),
             deleteInvoiceBtn: page.locator('form[name="EditInvoiceForm"] button[data-locator="deleteInvoice"]'),
             tenantName: page.locator('span[data-locator="objectSecondValue"]'),
@@ -210,6 +212,18 @@ export class IncomePage {
                 amount: page.locator('//div[text()= "Amount"]/following-sibling::div'),
                 holdType: page.locator('//div[text()= "Hold Type"]/following-sibling::div'),
                 closeBtn: page.locator('//section/div[1]/in-icon'),
+            },
+
+
+            // Record Payment form
+            recordPayment: {
+                tenantSelect: page.locator('form[name="cheque_form"] select:has(option[data-locator="itemText-0"])'),
+                paymentMethodSelect: page.locator('form[name="cheque_form"] select:has(option[data-locator="methodText-0"])'),
+                checkNumberInput: page.locator('form[name="cheque_form"] input[data-locator="checkNumber"]'),
+                moneyOrderNumberInput: page.locator('form[name="cheque_form"] input[data-locator="moneyOrderPayment"]'),
+                amountInput: page.locator('form[name="cheque_form"] input[data-locator="suggestedAmount"]'),
+                submitBtn: page.locator('form[name="cheque_form"] button[data-locator="submitButton"]'),
+                cancelBtn: page.locator('form[name="cheque_form"] button[data-locator="cancelledButton"]'),
             },
         };
     }
@@ -371,7 +385,7 @@ export class IncomePage {
         // ---- Submit ----
         await this.invoiceCreation.createInvoiceBtn.click();
 
-        return { propertyName, unitName, termName, tenantName, invoiceType, description };
+        return { propertyName, unitName, termName, tenantName, invoiceType, description, amount: 100 };
     }
 
     async filterByProperty(propertyName) {
@@ -425,6 +439,44 @@ export class IncomePage {
         await this.invoiceCreation.rateInput.fill(String(rate));
 
         await this.detail.saveButton.click();
+
+        await this.invoiceCreation.confirmationYesBtn.waitFor({ state: 'visible', timeout: 10000 });
+        await this.invoiceCreation.confirmationYesBtn.click();
+    }
+
+    async recordPayment(amount, method = 'Cash') {
+        // dropdown option order: 1=Check, 2=Cash, 3=Money Order
+        const methodIndex = { Check: 1, Cash: 2, 'Money Order': 3 }[method];
+
+        await this.detail.recordPaymentBtn.click();
+
+        await this.detail.recordPayment.tenantSelect.waitFor({ state: 'visible', timeout: 15000 });
+        await this.detail.recordPayment.tenantSelect.selectOption({ index: 1 });
+        await this.page.waitForTimeout(1000); // let Angular render the Payment Method field
+        await this.detail.recordPayment.paymentMethodSelect.selectOption({ index: methodIndex });
+        await this.page.waitForTimeout(1000); // let Angular render the conditional Check/Money Order number field
+
+        if (method === 'Check') {
+            await this.detail.recordPayment.checkNumberInput.fill(String(TestData.randomNumber(6)));
+        } else if (method === 'Money Order') {
+            await this.detail.recordPayment.moneyOrderNumberInput.fill(String(TestData.randomNumber(6)));
+        }
+
+        await this.detail.recordPayment.amountInput.fill(String(amount));
+        await this.page.waitForTimeout(1000); // let Angular's form validity catch up before submitting
+
+        // clicking Submit opens a second "review before submitting" confirmation dialog -
+        // the click occasionally doesn't register the first time, so retry once
+        await this.detail.recordPayment.submitBtn.click();
+        try {
+            await this.invoiceCreation.confirmationYesBtn.waitFor({ state: 'visible', timeout: 8000 });
+        } catch {
+            await this.detail.recordPayment.submitBtn.click();
+            await this.invoiceCreation.confirmationYesBtn.waitFor({ state: 'visible', timeout: 20000 });
+        }
+        await this.invoiceCreation.confirmationYesBtn.click();
+
+        await this.detail.paymentAmountValue.waitFor({ state: 'visible', timeout: 20000 });
     }
 
     async selectRandomPropertyWithUnitAndTerm() {

@@ -119,4 +119,30 @@ test.describe('Income Tests - shared login', () => {
         await expect(incomePage.detail.rateValue).toContainText(newRate);
     });
 
+    test('Verify that the user is able to click on recored payment and make the offline payment', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+        const { propertyName, unitName, amount } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
+
+        // grouped view: first click expands the property group, second click opens the invoice
+        await incomePage.listing.tableRows.first().click();
+        await incomePage.listing.tableRows.nth(1).click();
+
+        // wait for the real invoice data to load - right after opening a row the panel can
+        // briefly show a placeholder "Invoice: 0" state with no Record Payment button yet
+        await expect(incomePage.detail.invoiceIdSpan).not.toHaveText('0', { timeout: 15000 });
+
+        // pay only half of the known invoice amount, to verify partial-payment behaviour
+        const partialAmount = (amount / 2).toFixed(2);
+        const remainingAmount = (amount - Number(partialAmount)).toFixed(2);
+
+        await incomePage.recordPayment(partialAmount);
+
+        await expect(incomePage.detail.paymentAmountValue).toContainText(partialAmount);
+        await expect(incomePage.detail.totalPaidText).toContainText(partialAmount);
+        await expect(incomePage.detail.remainingBalanceText).toContainText(remainingAmount);
+    });
+
 });
