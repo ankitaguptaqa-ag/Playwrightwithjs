@@ -97,7 +97,7 @@ test.describe('Income Tests - shared login', () => {
         await expect(incomePage.detail.amountHeader).toBeVisible();
         console.log('All invoice details fields are visible on the details page');
     });
-    test.only('Verify that the user can edit an invoice from the details page', async () => { 
+    test('Verify that the user can edit an invoice from the details page', async () => {
      
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
