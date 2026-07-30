@@ -375,7 +375,12 @@ export class IncomePage {
         // Due Date can auto-fill based on the random Term picked, sometimes landing outside
         // the current month - force it to today so the invoice shows up in the listing's
         // default date-range filter right after creation.
-        const todayStr = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+        const today = new Date();
+        const todayStr = today.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+        // matches the "Jul 30, 2026" format the listing renders per-row - used to pick out
+        // this exact invoice later, since a property/unit with an active lease usually already
+        // has other invoices under it (see openCreatedInvoiceRow)
+        const dueDateDisplay = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         await this.invoiceCreation.dueDateInput.fill(todayStr);
 
         await this.page.waitForTimeout(1000); // pause so the filled fields are visible in headed mode
@@ -392,7 +397,19 @@ export class IncomePage {
         // ---- Submit ----
         await this.invoiceCreation.createInvoiceBtn.click();
 
-        return { propertyName, unitName, termName, tenantName, invoiceType, description, amount: 100 };
+        return { propertyName, unitName, termName, tenantName, invoiceType, description, amount: 100, dueDateDisplay };
+    }
+
+    // A property/unit with an active lease usually already has other invoices under it
+    // (e.g. auto-generated recurring Rent) - naively clicking the first nested row after
+    // expanding the group can open one of those instead of the invoice just created here.
+    // Matching on today's due date (unique enough within a single test run) picks the right one.
+    async openCreatedInvoiceRow(dueDateDisplay) {
+        await this.listing.tableRows.first().click(); // expand the property group
+
+        const invoiceRow = this.page.locator('tbody>tr', { hasText: dueDateDisplay });
+        await invoiceRow.first().waitFor({ state: 'visible', timeout: 10000 });
+        await invoiceRow.first().click();
     }
 
     async filterByProperty(propertyName) {

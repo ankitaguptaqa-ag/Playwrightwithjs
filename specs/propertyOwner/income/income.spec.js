@@ -60,15 +60,13 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
         await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
     });
 
@@ -76,13 +74,11 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
 
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
         await expect(incomePage.detail.invoiceIdSpan).toBeVisible();
@@ -101,13 +97,11 @@ test.describe('Income Tests - shared login', () => {
      
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
 
         const newSubject = `Updated Subject ${Math.floor(Math.random() * 1000)}`;
         const newRate = '200';
@@ -122,13 +116,11 @@ test.describe('Income Tests - shared login', () => {
     test('Verify that the user is able to click on recored payment and make the offline payment', async () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
-        const { propertyName, unitName, amount } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, amount, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
 
         // wait for the real invoice data to load - right after opening a row the panel can
         // briefly show a placeholder "Invoice: 0" state with no Record Payment button yet
