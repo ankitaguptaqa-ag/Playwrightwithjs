@@ -18,7 +18,7 @@ test.describe('Income Tests - shared login', () => {
 
         const loginPage = new LoginPage(sharedPage);
         await loginPage.goToLoginPage();
-        await loginPage.login(userData.env.qa.poUsers.po2.userName, userData.env.qa.poUsers.po2.password);
+        await loginPage.login(userData.env.qa.poUsers.po1.userName, userData.env.qa.poUsers.po1.password);
     });
 
     // Navigate to the income page before each test
