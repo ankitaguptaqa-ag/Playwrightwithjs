@@ -350,9 +350,16 @@ export class IncomePage {
         await this.invoiceCreation.invoiceTypeDropdown.click();
         await this.invoiceCreation.invoiceTypeOptions.first().waitFor({ state: 'visible', timeout: 10000 });
 
-        const typeCount = await this.invoiceCreation.invoiceTypeOptions.count();
-        const typeIndex = Math.floor(Math.random() * typeCount);
-        const invoiceType = await this.invoiceCreation.invoiceTypeOptions.nth(typeIndex).innerText();
+        // Rent invoices get a server-computed Subject ("Rent due on <date>") that ignores
+        // whatever is typed into Description, which breaks editInvoice()'s verification -
+        // exclude it so the randomly picked type always has an editable Subject/Description.
+        const allTypeTexts = await this.invoiceCreation.invoiceTypeOptions.allInnerTexts();
+        const nonRentIndexes = allTypeTexts
+            .map((text, index) => ({ text: text.trim(), index }))
+            .filter(({ text }) => text !== 'Rent')
+            .map(({ index }) => index);
+        const typeIndex = nonRentIndexes[Math.floor(Math.random() * nonRentIndexes.length)];
+        const invoiceType = allTypeTexts[typeIndex].trim();
 
         await this.invoiceCreation.invoiceTypeOptions.nth(typeIndex).click();
         await this.invoiceCreation.invoiceTypeDropdown.click(); // close
