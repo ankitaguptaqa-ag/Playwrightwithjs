@@ -380,7 +380,7 @@ export class IncomePage {
         // matches the "Jul 30, 2026" format the listing renders per-row - used to pick out
         // this exact invoice later, since a property/unit with an active lease usually already
         // has other invoices under it (see openCreatedInvoiceRow)
-        const dueDateDisplay = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const dueDateDisplay = today.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
         await this.invoiceCreation.dueDateInput.fill(todayStr);
 
         await this.page.waitForTimeout(1000); // pause so the filled fields are visible in headed mode
