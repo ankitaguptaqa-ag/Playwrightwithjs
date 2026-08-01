@@ -481,9 +481,16 @@ export class IncomePage {
             await this.filters.unitDropdown.click();
             await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').waitFor({ state: 'visible', timeout: 10000 });
             await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').click();
-            await this.page.waitForTimeout(500); // let the unit list settle before checking it
 
-            unitFound = await unitOption.isVisible();
+            // The very first time this filter panel is opened in a fresh page session, the
+            // unit list can take noticeably longer to finish rendering than on later calls in
+            // the same run (confirmed: every "unit not found" failure was on the first test to
+            // call this method, never later ones) - poll instead of a fixed pause so slow first
+            // renders aren't mistaken for a genuinely missing unit.
+            unitFound = await unitOption
+                .waitFor({ state: 'visible', timeout: 8000 })
+                .then(() => true)
+                .catch(() => false);
             if (unitFound) {
                 await unitOption.click();
                 await this.filters.unitDropdown.click(); // close
