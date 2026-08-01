@@ -153,7 +153,8 @@ export class IncomePage {
             quantityHeader: page.locator('table.table-invoice-detail th:has-text("Quantity")'),
             rateHeader: page.locator('table.table-invoice-detail th:has-text("Rate")'),
             amountHeader: page.locator('table.table-invoice-detail th:has-text("Amount")').first(),
-            // first item row, Rate is the 4th cell (Item, Description, Quantity, Rate, Amount)
+            // first item row - Description is the 2nd cell, Rate is the 4th (Item, Description, Quantity, Rate, Amount)
+            descriptionValue: page.locator('table.table-invoice-detail tbody tr').first().locator('td').nth(1),
             rateValue: page.locator('table.table-invoice-detail tbody tr').first().locator('td').nth(3),
 
             
@@ -400,20 +401,34 @@ export class IncomePage {
         return { propertyName, unitName, termName, tenantName, invoiceType, description, amount: 100, dueDateDisplay };
     }
 
-    // A property/unit with an active lease usually already has other invoices under it
-    // (e.g. auto-generated recurring Rent) - naively clicking the first nested row after
-    // expanding the group can open one of those instead of the invoice just created here.
-    // Matching on today's due date (unique enough within a single test run) picks the right one.
-    async openCreatedInvoiceRow(dueDateDisplay, amount = 100) {
-        await this.listing.tableRows.first().click(); // expand the property group
+    async openCreatedInvoiceRow(dueDateDisplay, description) {
+        // Due date alone isn't always enough to identify the right invoice - a property's own
+        // auto-generated recurring invoice (e.g. Rent) can coincidentally share today's due
+        // date, and $100 (createNewInvoice()'s fixed rate) is too common in this account's
+        // data to disambiguate either. Try each same-due-date candidate and verify its actual
+        // Description matches what we created, since that's the only genuinely unique value.
+        const candidateRows = this.page.locator('tbody>tr', { hasText: dueDateDisplay });
 
-        // Matching on due date alone isn't always enough - a property's own auto-generated
-        // recurring Rent invoice can coincidentally share today's due date. createNewInvoice()
-        // always creates a $100 invoice, so requiring both narrows it down reliably.
-        const amountText = `$${Number(amount).toFixed(2)}`;
-        const invoiceRow = this.page.locator('tbody>tr', { hasText: dueDateDisplay }).filter({ hasText: amountText });
-        await invoiceRow.first().waitFor({ state: 'visible', timeout: 10000 });
-        await invoiceRow.first().click();
+        await this.listing.tableRows.first().click(); // expand the property group
+        await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
+        const candidateCount = await candidateRows.count();
+
+        for (let i = 0; i < candidateCount; i++) {
+            await candidateRows.nth(i).click();
+            await this.detail.descriptionValue.waitFor({ state: 'visible', timeout: 10000 });
+            const actualDescription = (await this.detail.descriptionValue.innerText()).trim();
+            if (actualDescription === description) {
+                return;
+            }
+
+            // wrong invoice - close it, re-expand the group, and try the next candidate
+            await this.page.locator('a[data-locator="closeInvoice"]').click();
+            await this.listing.tableRows.first().click();
+        }
+
+        throw new Error(
+            `Could not find an invoice due "${dueDateDisplay}" with description "${description}" (${candidateCount} candidate(s) tried)`,
+        );
     }
 
     async filterByProperty(propertyName) {
