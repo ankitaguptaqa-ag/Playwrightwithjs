@@ -407,7 +407,10 @@ export class IncomePage {
         // date, and $100 (createNewInvoice()'s fixed rate) is too common in this account's
         // data to disambiguate either. Try each same-due-date candidate and verify its actual
         // Description matches what we created, since that's the only genuinely unique value.
-        const candidateRows = this.page.locator('tbody>tr', { hasText: dueDateDisplay });
+        // :visible excludes stale/collapsed rows left behind in the DOM (class="d-none")
+        // from other groups elsewhere in the table that happen to also contain this date
+        // text - without it, count()/nth() can pick up a hidden decoy row.
+        const candidateRows = this.page.locator('tbody>tr:visible', { hasText: dueDateDisplay });
 
         await this.listing.tableRows.first().click(); // expand the property group
         await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
