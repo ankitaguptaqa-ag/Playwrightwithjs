@@ -460,7 +460,9 @@ export class IncomePage {
         // the edit panel reuses the same form fields as Create New Invoice
         await this.invoiceCreation.descriptionInput.waitFor({ state: 'visible', timeout: 10000 });
         await this.invoiceCreation.descriptionInput.fill(subject);
+        await this.page.waitForTimeout(500); // let Angular's form register the new description before the next fill
         await this.invoiceCreation.rateInput.fill(String(rate));
+        await this.page.waitForTimeout(500); // let Angular's form register the new rate before saving
 
         await this.detail.saveButton.click();
 
