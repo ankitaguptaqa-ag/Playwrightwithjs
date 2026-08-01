@@ -493,7 +493,7 @@ export class IncomePage {
             // call this method, never later ones) - poll instead of a fixed pause so slow first
             // renders aren't mistaken for a genuinely missing unit.
             unitFound = await unitOption
-                .waitFor({ state: 'visible', timeout: 8000 })
+                .waitFor({ state: 'visible', timeout: 20000 })
                 .then(() => true)
                 .catch(() => false);
             if (unitFound) {
