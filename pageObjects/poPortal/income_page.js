@@ -414,6 +414,11 @@ export class IncomePage {
 
         await this.listing.tableRows.first().click(); // expand the property group
         await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
+        // the first candidate being visible doesn't guarantee any others have finished
+        // rendering too, especially on this method's first call in a run (same cold-start
+        // rendering delay seen with the unit dropdown above) - counting too early can miss
+        // a still-rendering row and leave a later nth() waiting on an index that never fills in
+        await this.page.waitForTimeout(1000);
         const candidateCount = await candidateRows.count();
 
         for (let i = 0; i < candidateCount; i++) {
