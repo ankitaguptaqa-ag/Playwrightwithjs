@@ -462,6 +462,11 @@ export class IncomePage {
         const matchCount = await matches.count();
         const unitOption = this.page.locator(`//ng-dropdown-panel//label[contains(text(), "${unitName}")]`);
 
+        // Each loop iteration starts and ends with the property dropdown closed, and only
+        // ever opens it via propertySearchInput becoming visible as confirmation - relying on
+        // blind toggle clicks here previously left the dropdown in an inconsistent open/closed
+        // state, since a click meant to "open" it can get swallowed as just closing whatever
+        // other dropdown (e.g. Unit) was still open at the time.
         let unitFound = false;
         for (let i = 0; i < matchCount; i++) {
             await matches.nth(i).click();
@@ -482,14 +487,17 @@ export class IncomePage {
                 break;
             }
 
-            // wrong property - close, uncheck it, and try the next match
+            // wrong property - close the unit dropdown, reopen the property dropdown
+            // (confirmed via its search input, not just a click) to uncheck this match,
+            // then close it again before trying the next one
             await this.filters.unitDropdown.click();
             await this.filters.propertyDropdown.click();
+            await this.filters.propertySearchInput.waitFor({ state: 'visible', timeout: 10000 });
             await matches.nth(i).click(); // uncheck
+            await this.filters.propertyDropdown.click(); // close
         }
 
         if (!unitFound) {
-            await this.filters.propertyDropdown.click(); // close before failing
             throw new Error(
                 `Could not find unit "${unitName}" under any of the ${matchCount} propert${matchCount === 1 ? 'y' : 'ies'} named "${propertyName}"`,
             );
