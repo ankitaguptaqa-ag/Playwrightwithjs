@@ -60,15 +60,13 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, description, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
         await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, description);
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
     });
 
@@ -76,13 +74,11 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, description, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, description);
 
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
         await expect(incomePage.detail.invoiceIdSpan).toBeVisible();
@@ -101,13 +97,11 @@ test.describe('Income Tests - shared login', () => {
      
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
-        const { propertyName, unitName } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, description, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        // grouped view: first click expands the property group, second click opens the invoice
-        await incomePage.listing.tableRows.first().click();
-        await incomePage.listing.tableRows.nth(1).click();
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, description);
 
         const newSubject = `Updated Subject ${Math.floor(Math.random() * 1000)}`;
         const newRate = '200';
@@ -117,6 +111,30 @@ test.describe('Income Tests - shared login', () => {
         // Verify that the subject and rate have been updated on the details page
         await expect(incomePage.detail.subjectValue).toHaveText(newSubject);
         await expect(incomePage.detail.rateValue).toContainText(newRate);
+    });
+
+    test('Verify that the user is able to click on recored payment and make the offline payment', async () => {
+        const incomePage = new IncomePage(sharedPage);
+        const menuPage = new MenuPage(sharedPage);
+        const { propertyName, unitName, amount, description, dueDateDisplay } = await incomePage.createNewInvoice();
+        await menuPage.navigateToIncomesPage();
+        await incomePage.filterByPropertyAndUnit(propertyName, unitName);
+
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, description);
+
+        // wait for the real invoice data to load - right after opening a row the panel can
+        // briefly show a placeholder "Invoice: 0" state with no Record Payment button yet
+        await expect(incomePage.detail.invoiceIdSpan).not.toHaveText('0', { timeout: 15000 });
+
+        // pay only half of the known invoice amount, to verify partial-payment behaviour
+        const partialAmount = (amount / 2).toFixed(2);
+        const remainingAmount = (amount - Number(partialAmount)).toFixed(2);
+
+        await incomePage.recordPayment(partialAmount);
+
+        await expect(incomePage.detail.paymentAmountValue).toContainText(partialAmount);
+        await expect(incomePage.detail.totalPaidText).toContainText(partialAmount);
+        await expect(incomePage.detail.remainingBalanceText).toContainText(remainingAmount);
     });
 
 });
