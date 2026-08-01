@@ -404,10 +404,14 @@ export class IncomePage {
     // (e.g. auto-generated recurring Rent) - naively clicking the first nested row after
     // expanding the group can open one of those instead of the invoice just created here.
     // Matching on today's due date (unique enough within a single test run) picks the right one.
-    async openCreatedInvoiceRow(dueDateDisplay) {
+    async openCreatedInvoiceRow(dueDateDisplay, amount = 100) {
         await this.listing.tableRows.first().click(); // expand the property group
 
-        const invoiceRow = this.page.locator('tbody>tr', { hasText: dueDateDisplay });
+        // Matching on due date alone isn't always enough - a property's own auto-generated
+        // recurring Rent invoice can coincidentally share today's due date. createNewInvoice()
+        // always creates a $100 invoice, so requiring both narrows it down reliably.
+        const amountText = `$${Number(amount).toFixed(2)}`;
+        const invoiceRow = this.page.locator('tbody>tr', { hasText: dueDateDisplay }).filter({ hasText: amountText });
         await invoiceRow.first().waitFor({ state: 'visible', timeout: 10000 });
         await invoiceRow.first().click();
     }

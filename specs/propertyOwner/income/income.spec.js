@@ -60,13 +60,13 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, amount, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
         await expect(incomePage.listing.propertyNameFirstRow).toHaveText(propertyName);
 
-        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, amount);
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
     });
 
@@ -74,11 +74,11 @@ test.describe('Income Tests - shared login', () => {
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
 
-        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, amount, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, amount);
 
         await expect(incomePage.detail.propertyName).toHaveText(propertyName);
         await expect(incomePage.detail.invoiceIdSpan).toBeVisible();
@@ -97,11 +97,11 @@ test.describe('Income Tests - shared login', () => {
      
         const incomePage = new IncomePage(sharedPage);
         const menuPage = new MenuPage(sharedPage);
-        const { propertyName, unitName, dueDateDisplay } = await incomePage.createNewInvoice();
+        const { propertyName, unitName, amount, dueDateDisplay } = await incomePage.createNewInvoice();
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, amount);
 
         const newSubject = `Updated Subject ${Math.floor(Math.random() * 1000)}`;
         const newRate = '200';
@@ -120,7 +120,7 @@ test.describe('Income Tests - shared login', () => {
         await menuPage.navigateToIncomesPage();
         await incomePage.filterByPropertyAndUnit(propertyName, unitName);
 
-        await incomePage.openCreatedInvoiceRow(dueDateDisplay);
+        await incomePage.openCreatedInvoiceRow(dueDateDisplay, amount);
 
         // wait for the real invoice data to load - right after opening a row the panel can
         // briefly show a placeholder "Invoice: 0" state with no Record Payment button yet
