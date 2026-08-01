@@ -17,9 +17,20 @@ export class LoginPage {
             return;
         }
 
-        // a previous test may have left an open panel/overlay behind that would
-        // block the click - closing it first keeps logout independent of that state
+        // a previous test may have left an open dropdown panel behind
         await this.page.keyboard.press('Escape').catch(() => {});
+
+        // A test that fails with the Income filter panel open leaves a full-viewport
+        // div.filter-overlay behind, and it swallows the logout click ("subtree intercepts
+        // pointer events"), turning one failure into two. Escape does not dismiss this
+        // particular overlay - clicking it does, but only near a corner: its centre is
+        // covered by the filter form sitting on top of it.
+        const filterOverlay = this.page.locator('div.filter-overlay');
+        if (await filterOverlay.isVisible().catch(() => false)) {
+            await filterOverlay.click({ position: { x: 5, y: 5 } }).catch(() => {});
+            await filterOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+        }
+
         await this.logoutButton.click({ timeout: 15000 });
         await this.page.waitForURL((url) => url.toString().includes('qa-auth'),{timeout : 30000});
 

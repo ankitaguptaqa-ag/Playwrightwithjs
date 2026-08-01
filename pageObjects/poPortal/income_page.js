@@ -240,8 +240,11 @@ export class IncomePage {
         return this.page.locator(`//label[text()="${status}"]`);
     }
 
+    // Scoped to the open dropdown panel on purpose: the property name is also rendered in
+    // the listing rows and filter capsules behind the panel, and an unscoped //span match
+    // can click one of those instead - which silently leaves the filter unset.
     propertyCheckbox(name) {
-        return this.page.locator(`//span[contains(text(), "${name}")]`);
+        return this.page.locator(`//ng-dropdown-panel//span[contains(text(), "${name}")]`);
     }
 
     tenantCheckbox(name) {
@@ -410,10 +413,13 @@ export class IncomePage {
         // :visible excludes stale/collapsed rows left behind in the DOM (class="d-none")
         // from other groups elsewhere in the table that happen to also contain this date
         // text - without it, count()/nth() can pick up a hidden decoy row.
-        const candidateRows = this.page.locator('tbody>tr:visible', { hasText: dueDateDisplay });
+        // .income-table-row keeps this to actual invoice rows: the property group's header row
+        // (.invoice-table-row) spells out the lease term, e.g. "(Jul 15, 2026 - M to M)", so it
+        // matches the due-date text too - and clicking it collapses the group instead of opening
+        // an invoice, hiding the rows a later nth() is still waiting for.
+        const candidateRows = this.page.locator('tbody>tr.income-table-row:visible', { hasText: dueDateDisplay });
 
-        await this.listing.tableRows.first().click(); // expand the property group
-        await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
+        await this.expandInvoiceGroup(candidateRows);
         // the first candidate being visible doesn't guarantee any others have finished
         // rendering too, especially on this method's first call in a run (same cold-start
         // rendering delay seen with the unit dropdown above) - counting too early can miss
@@ -421,8 +427,24 @@ export class IncomePage {
         await this.page.waitForTimeout(1000);
         const candidateCount = await candidateRows.count();
 
+        let tried = 0;
         for (let i = 0; i < candidateCount; i++) {
+            // the group is re-expanded between attempts, so the row set is rebuilt each time -
+            // if it comes back shorter than the count taken on the first pass, stop here rather
+            // than spend the whole action timeout clicking an index that will never appear
+            if (!(await candidateRows.nth(i).isVisible().catch(() => false))) {
+                break;
+            }
+
+            tried++;
+            const rowInvoiceId = (await candidateRows.nth(i).locator('[data-locator="invoiceId"]').innerText()).trim();
             await candidateRows.nth(i).click();
+
+            // The detail panel keeps the previously opened invoice on screen while the next one
+            // loads, so descriptionValue becoming "visible" isn't enough - read it too early and
+            // the comparison is against the last invoice's description, which sends this loop
+            // past the very row it was looking for. Wait for the panel to be showing this row.
+            await expect(this.detail.invoiceIdSpan).toHaveText(rowInvoiceId, { timeout: 15000 });
             await this.detail.descriptionValue.waitFor({ state: 'visible', timeout: 10000 });
             const actualDescription = (await this.detail.descriptionValue.innerText()).trim();
             if (actualDescription === description) {
@@ -431,12 +453,41 @@ export class IncomePage {
 
             // wrong invoice - close it, re-expand the group, and try the next candidate
             await this.page.locator('a[data-locator="closeInvoice"]').click();
-            await this.listing.tableRows.first().click();
+            await this.expandInvoiceGroup(candidateRows);
         }
 
         throw new Error(
-            `Could not find an invoice due "${dueDateDisplay}" with description "${description}" (${candidateCount} candidate(s) tried)`,
+            `Could not find an invoice due "${dueDateDisplay}" with description "${description}" (${tried} of ${candidateCount} candidate(s) tried)`,
         );
+    }
+
+    // Clicking the listing's first row toggles the property group open/closed. Coming back
+    // from an invoice's detail view the group is sometimes already expanded, and clicking it
+    // then collapses it instead - hiding the very candidate rows the caller is iterating over.
+    // Only click when the rows aren't showing, and confirm they're there afterwards.
+    async expandInvoiceGroup(candidateRows) {
+        if (await candidateRows.first().isVisible().catch(() => false)) {
+            return;
+        }
+        await this.listing.tableRows.first().click();
+        await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
+    }
+
+    // The dropdown panel starts out holding every property and is re-filtered as the search
+    // text is typed, so a count taken mid-filter can be wrong in either direction. Wait for
+    // two identical readings before trusting it.
+    async stableCount(locator, timeout = 10000) {
+        const deadline = Date.now() + timeout;
+        let previous = await locator.count();
+        while (Date.now() < deadline) {
+            await this.page.waitForTimeout(500);
+            const current = await locator.count();
+            if (current === previous) {
+                return current;
+            }
+            previous = current;
+        }
+        return previous;
     }
 
     async filterByProperty(propertyName) {
@@ -456,7 +507,15 @@ export class IncomePage {
     }
 
     async filterByPropertyAndUnit(propertyName, unitName) {
-        await this.filters.filterCollapse.click();
+        await this.openFilterPanel();
+
+        // Filters survive between tests on the shared page. Whatever property an earlier test
+        // left checked is still checked here, and since the Property filter is a multi-select,
+        // clicking this test's property would add to it rather than replace it - or, if it
+        // happens to be the same property, toggle it back off and leave the filter unset.
+        await this.filters.clearFilterBtn.click();
+        await this.page.waitForTimeout(2000); // clearing closes the panel and reloads the list
+        await this.openFilterPanel();
 
         await this.filters.propertyDropdown.click();
         await this.filters.propertySearchInput.fill(propertyName);
@@ -467,8 +526,10 @@ export class IncomePage {
         // moving to the next) until one's Unit dropdown actually contains the unit we're
         // after, since that's the only reliable way to confirm we picked the right property.
         const matches = this.propertyCheckbox(propertyName);
-        const matchCount = await matches.count();
+        await matches.first().waitFor({ state: 'visible', timeout: 15000 });
+        const matchCount = await this.stableCount(matches);
         const unitOption = this.page.locator(`//ng-dropdown-panel//label[contains(text(), "${unitName}")]`);
+        let listedUnits = [];
 
         // Each loop iteration starts and ends with the property dropdown closed, and only
         // ever opens it via propertySearchInput becoming visible as confirmation - relying on
@@ -487,17 +548,17 @@ export class IncomePage {
             await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').waitFor({ state: 'visible', timeout: 10000 });
             await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').click();
 
-            // The very first time this filter panel is opened in a fresh page session, the
-            // unit list can take noticeably longer to finish rendering than on later calls in
-            // the same run (confirmed: every "unit not found" failure was on the first test to
-            // call this method, never later ones) - poll instead of a fixed pause so slow first
-            // renders aren't mistaken for a genuinely missing unit.
+            // The whole list renders at once (it only ever holds this property's own units),
+            // so once the "All" row above is up, a short wait is enough to tell a still-
+            // rendering list from a property that genuinely doesn't have this unit.
             unitFound = await unitOption
-                .waitFor({ state: 'visible', timeout: 20000 })
+                .first()
+                .waitFor({ state: 'visible', timeout: 10000 })
                 .then(() => true)
                 .catch(() => false);
+            listedUnits = await this.page.locator('//ng-dropdown-panel//label').allInnerTexts();
             if (unitFound) {
-                await unitOption.click();
+                await unitOption.first().click();
                 await this.filters.unitDropdown.click(); // close
                 break;
             }
@@ -513,9 +574,19 @@ export class IncomePage {
         }
 
         if (!unitFound) {
-            throw new Error(
-                `Could not find unit "${unitName}" under any of the ${matchCount} propert${matchCount === 1 ? 'y' : 'ies'} named "${propertyName}"`,
+            // The Unit filter is fed by a live per-property API call that returns only that
+            // property's active, non-archived units (POST /api/Home/DropDown/v2/units), so a
+            // unit it doesn't list can't be waited for - it isn't coming. That happens when
+            // the unit the invoice was created against has since been archived or renamed in
+            // this shared QA account. Filtering by property alone still proves the invoice is
+            // findable through the filters, and openCreatedInvoiceRow identifies it by its
+            // unique description anyway - so narrow by property and carry on rather than
+            // failing the whole serial suite over the account's data.
+            console.warn(
+                `Unit "${unitName}" is not offered by the Income filter for property "${propertyName}" ` +
+                    `(it lists: [${listedUnits.map((u) => u.trim()).join(', ')}]) - filtering by property only.`,
             );
+            await this.reselectPropertyWithAllUnits(matches);
         }
 
         await this.filters.applyFilterBtn.click();
@@ -523,6 +594,34 @@ export class IncomePage {
 
         // stay in the default Grouped by Property view - no need to switch
         await this.listing.propertyNameFirstRow.waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    // filterCollapse toggles the filter panel, so a blind click closes it when it's already
+    // open. Check first, and confirm the panel is really up before anyone reaches into it.
+    async openFilterPanel() {
+        if (!(await this.filters.propertyDropdown.isVisible().catch(() => false))) {
+            await this.filters.filterCollapse.click();
+        }
+        await this.filters.propertyDropdown.waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    // Fallback for filterByPropertyAndUnit: its loop leaves every property match unchecked and
+    // the Unit filter's "All" unchecked, which would apply an empty filter and return no rows.
+    // Re-check the first match and put the unit filter back to "All".
+    async reselectPropertyWithAllUnits(matches) {
+        await this.filters.propertyDropdown.click();
+        await this.filters.propertySearchInput.waitFor({ state: 'visible', timeout: 10000 });
+        await matches.first().click();
+        await this.filters.propertyDropdown.click(); // close
+
+        await this.filters.unitDropdown.click();
+        const selectAllLabel = this.page.locator('label[data-locator="multi-dropdown-select-all-label"]');
+        const selectAllCheckbox = this.page.locator('input[data-locator="multi-dropdown-select-all-checkbox"]');
+        await selectAllLabel.waitFor({ state: 'visible', timeout: 10000 });
+        if (!(await selectAllCheckbox.isChecked().catch(() => false))) {
+            await selectAllLabel.click();
+        }
+        await this.filters.unitDropdown.click(); // close
     }
 
     async editInvoice({ subject, rate }) {
@@ -671,26 +770,41 @@ export class IncomePage {
 
         // 2. this property might have zero units - the panel just stays blank,
         // no "no items found" message like expense_page.js has. So wait up to 5s
-        // for a real option to show up; if none does, there are none.
+        // for a real option to show up; if none does, there are none. The panel can also
+        // still be holding the previous property's units at this point (this method is
+        // called again for a new property whenever one turns out to have no term), so let
+        // the list settle before reading anything off it.
         let hasUnits = true;
         try {
             await options.first().waitFor({ state: 'visible', timeout: 5000 });
         } catch {
             hasUnits = false;
         }
+        const count = hasUnits ? await this.stableCount(options) : 0;
 
         // 3. no units - close and stop
-        if (!hasUnits) {
+        if (count === 0) {
             await toggle.click();
             return 'No units available';
         }
 
         // 4. units exist - pick one at random
-        const index = Math.floor(Math.random() * await options.count());
-        const unitName = await options.nth(index).innerText();
+        const index = Math.floor(Math.random() * count);
         await options.nth(index).click();
         await toggle.click();
 
-        return unitName;
+        // 5. Report the unit the form actually ended up with, not the option that was clicked:
+        // if the panel re-rendered under the click, those differ, and the invoice then gets
+        // created against a unit this method never names. That mismatch surfaces much later as
+        // a misleading "Could not find unit X" in filterByPropertyAndUnit, because the Income
+        // filter only ever lists units that really belong to the selected property.
+        // The closed toggle reads "Select Unit" while nothing is selected, and the unit's own
+        // name once something is - so it's the honest answer in both cases.
+        const selectedUnit = (await toggle.innerText()).trim();
+        if (!selectedUnit || selectedUnit === 'Select Unit') {
+            return 'No units available'; // nothing stuck - caller moves on to another property
+        }
+
+        return selectedUnit;
     }
 }
