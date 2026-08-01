@@ -434,20 +434,47 @@ export class IncomePage {
         await this.filters.propertyDropdown.click();
         await this.filters.propertySearchInput.fill(propertyName);
         await this.page.waitForTimeout(1000); // let the search results filter before picking one
-        await this.propertyCheckbox(propertyName).first().click();
-        await this.filters.propertyDropdown.click(); // close
 
-        // Unit filter defaults to "All" checked - uncheck it first so only the
-        // one unit we pick ends up selected, otherwise a property with multiple
-        // units/invoices returns more than one row and it's unclear which is ours.
-        await this.filters.unitDropdown.click();
-        await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').waitFor({ state: 'visible', timeout: 10000 });
-        await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').click();
-
+        // Property names aren't unique in this account - multiple properties can share the
+        // exact same display name. Try each match in turn (unchecking the wrong one before
+        // moving to the next) until one's Unit dropdown actually contains the unit we're
+        // after, since that's the only reliable way to confirm we picked the right property.
+        const matches = this.propertyCheckbox(propertyName);
+        const matchCount = await matches.count();
         const unitOption = this.page.locator(`//ng-dropdown-panel//label[contains(text(), "${unitName}")]`);
-        await unitOption.waitFor({ state: 'visible', timeout: 10000 });
-        await unitOption.click();
-        await this.filters.unitDropdown.click(); // close
+
+        let unitFound = false;
+        for (let i = 0; i < matchCount; i++) {
+            await matches.nth(i).click();
+            await this.filters.propertyDropdown.click(); // close
+
+            // Unit filter defaults to "All" checked - uncheck it first so only the
+            // one unit we pick ends up selected, otherwise a property with multiple
+            // units/invoices returns more than one row and it's unclear which is ours.
+            await this.filters.unitDropdown.click();
+            await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').waitFor({ state: 'visible', timeout: 10000 });
+            await this.page.locator('label[data-locator="multi-dropdown-select-all-label"]').click();
+            await this.page.waitForTimeout(500); // let the unit list settle before checking it
+
+            unitFound = await unitOption.isVisible();
+            if (unitFound) {
+                await unitOption.click();
+                await this.filters.unitDropdown.click(); // close
+                break;
+            }
+
+            // wrong property - close, uncheck it, and try the next match
+            await this.filters.unitDropdown.click();
+            await this.filters.propertyDropdown.click();
+            await matches.nth(i).click(); // uncheck
+        }
+
+        if (!unitFound) {
+            await this.filters.propertyDropdown.click(); // close before failing
+            throw new Error(
+                `Could not find unit "${unitName}" under any of the ${matchCount} propert${matchCount === 1 ? 'y' : 'ies'} named "${propertyName}"`,
+            );
+        }
 
         await this.filters.applyFilterBtn.click();
         await this.page.waitForTimeout(2000); // let filtered results load
