@@ -417,6 +417,7 @@ export class IncomePage {
 
         await this.filters.propertyDropdown.click();
         await this.filters.propertySearchInput.fill(propertyName);
+        await this.page.waitForTimeout(1000); // let the search results filter before picking one
         await this.propertyCheckbox(propertyName).first().click();
         await this.filters.propertyDropdown.click(); // close
 
@@ -432,6 +433,7 @@ export class IncomePage {
 
         await this.filters.propertyDropdown.click();
         await this.filters.propertySearchInput.fill(propertyName);
+        await this.page.waitForTimeout(1000); // let the search results filter before picking one
         await this.propertyCheckbox(propertyName).first().click();
         await this.filters.propertyDropdown.click(); // close
 
