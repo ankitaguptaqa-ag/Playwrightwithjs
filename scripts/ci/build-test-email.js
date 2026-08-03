@@ -141,8 +141,11 @@ function main() {
         process.exit(1);
     }
 
-    const failedCount = specs.filter((spec) => !spec.ok && spec.status !== 'skipped').length;
-    const passedCount = specs.filter((spec) => spec.ok && spec.status !== 'skipped').length;
+    const counts = specs.reduce((totals, spec) => {
+        const { label } = statusOf(spec);
+        totals[label] = (totals[label] || 0) + 1;
+        return totals;
+    }, {});
     const meta = {
         repo: env('REPO'),
         branch: env('BRANCH'),
@@ -150,9 +153,14 @@ function main() {
         runUrl: env('RUN_URL'),
     };
 
+    // Flaky is called out separately: a test that only passed on its second attempt is not
+    // the same as one that passed, and rolling them together hides the thing worth chasing.
+    const tally = ['passed', 'flaky', 'failed', 'skipped']
+        .filter((label) => counts[label])
+        .map((label) => `${counts[label]} ${label}`)
+        .join(', ');
     const subject =
-        `[${failedCount ? 'FAILED' : 'PASSED'}] Playwright: ${passedCount} passed` +
-        (failedCount ? `, ${failedCount} failed` : '') +
+        `[${counts.failed ? 'FAILED' : 'PASSED'}] Playwright: ${tally}` +
         (meta.branch ? ` on ${meta.branch}` : '');
 
     // Headers and body in one file, ready for `curl --upload-file`. Base64 keeps the ✓/✗ marks

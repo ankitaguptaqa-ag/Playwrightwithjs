@@ -46,14 +46,19 @@ jobs:
       env:
         MAIL_FROM: ${{ secrets.MAIL_USERNAME }}
         REPO: ${{ github.repository }}
-        BRANCH: ${{ github.ref_name }}
+        # head_ref is the source branch on a PR; ref_name would read "14/merge"
+        BRANCH: ${{ github.head_ref || github.ref_name }}
         COMMIT: ${{ github.sha }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     # curl speaks SMTP, so no third-party mail action is needed. Gmail requires an App
     # Password here (a normal account password is rejected) - see README/repo secrets.
+    # All three secrets, not just the username: with a half-configured setup curl fails
+    # "Login denied" and takes the whole run red. continue-on-error for the same reason -
+    # a mail problem must never turn a passing test run into a failing check.
     - name: Email the results
-      if: ${{ !cancelled() && env.MAIL_USERNAME != '' }}
+      if: ${{ !cancelled() && env.MAIL_USERNAME != '' && env.MAIL_PASSWORD != '' && env.MAIL_TO != '' }}
+      continue-on-error: true
       run: |
         curl --silent --show-error --ssl-reqd \
           --url 'smtps://smtp.gmail.com:465' \
