@@ -10,11 +10,12 @@
  *   RUN_URL, BRANCH, COMMIT, REPO - run metadata shown at the top of the email
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
 const RESULTS_FILE = 'test-results/results.json';
 const EMAIL_FILE = 'test-results/email.txt';
+const DASHBOARD_FILE = 'test-results/sign-off-report.html';
 
 const env = (name, fallback = '') => process.env[name] || fallback;
 
@@ -166,17 +167,49 @@ function main() {
     // Headers and body in one file, ready for `curl --upload-file`. Base64 keeps the ✓/✗ marks
     // intact through SMTP, which is 7-bit by default.
     const html = buildHtml(specs, meta);
-    const message = [
+    const encode = (text) => Buffer.from(text, 'utf8').toString('base64').replace(/(.{76})/g, '$1\r\n');
+
+    // The sign-off dashboard rides along as an attachment when it's been generated, so the
+    // full report lands in the inbox instead of behind an artifact download.
+    const dashboard = existsSync(DASHBOARD_FILE) ? readFileSync(DASHBOARD_FILE, 'utf8') : null;
+    const boundary = `innago-report-${Date.now()}`;
+
+    const headers = [
         `From: ${env('MAIL_FROM')}`,
         `To: ${env('MAIL_TO')}`,
         `Subject: ${subject}`,
         'MIME-Version: 1.0',
-        'Content-Type: text/html; charset=UTF-8',
-        'Content-Transfer-Encoding: base64',
-        '',
-        Buffer.from(html, 'utf8').toString('base64').replace(/(.{76})/g, '$1\r\n'),
-        '',
-    ].join('\r\n');
+    ];
+
+    const message = dashboard
+        ? [
+              ...headers,
+              `Content-Type: multipart/mixed; boundary="${boundary}"`,
+              '',
+              `--${boundary}`,
+              'Content-Type: text/html; charset=UTF-8',
+              'Content-Transfer-Encoding: base64',
+              '',
+              encode(html),
+              '',
+              `--${boundary}`,
+              'Content-Type: text/html; charset=UTF-8; name="sign-off-report.html"',
+              'Content-Transfer-Encoding: base64',
+              'Content-Disposition: attachment; filename="sign-off-report.html"',
+              '',
+              encode(dashboard),
+              '',
+              `--${boundary}--`,
+              '',
+          ].join('\r\n')
+        : [
+              ...headers,
+              'Content-Type: text/html; charset=UTF-8',
+              'Content-Transfer-Encoding: base64',
+              '',
+              encode(html),
+              '',
+          ].join('\r\n');
 
     mkdirSync(dirname(EMAIL_FILE), { recursive: true });
     writeFileSync(EMAIL_FILE, message);

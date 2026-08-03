@@ -39,7 +39,26 @@ jobs:
         path: playwright-report/
         retention-days: 30
 
-    # Which tests passed and failed, as an HTML table - built from the json reporter's output
+    # QA sign-off dashboard: verdict, pass rate, per-spec breakdown and charts. Also writes a
+    # summary table into the run page itself, so the headline is visible without downloading.
+    - name: Generate the sign-off dashboard
+      if: ${{ !cancelled() }}
+      run: node scripts/ci/generate-signoff-report.js
+      env:
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+        COMMIT: ${{ github.sha }}
+        TEST_ENV: "QA (qa-my.innago.com)"
+
+    - name: Upload the sign-off dashboard
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: sign-off-report
+        path: test-results/sign-off-report.html
+        retention-days: 30
+
+    # Which tests passed and failed, as an HTML table - built from the json reporter's output.
+    # Runs after the dashboard so it can go out as an attachment.
     - name: Build the results email
       if: ${{ !cancelled() }}
       run: node scripts/ci/build-test-email.js
