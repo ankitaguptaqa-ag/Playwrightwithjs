@@ -53,7 +53,8 @@ export default defineConfig({
 
  /* Reporter to use */
  //reporter: 'html',
- reporter: [['list'], ['html'], ['allure-playwright', { outputFolder: 'allure-results', detail: true, suiteTitle: true }]],
+ // the json reporter is what the CI results email is built from (scripts/ci/build-test-email.js)
+ reporter: [['list'], ['html'], ['json', { outputFile: 'test-results/results.json' }], ['allure-playwright', { outputFolder: 'allure-results', detail: true, suiteTitle: true }]],
  //reporter: [['verbose'], ['html']],
 
  expect: {
