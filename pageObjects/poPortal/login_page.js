@@ -46,6 +46,41 @@ export class LoginPage {
         // QA server sometimes bounces through a slow multi-hop redirect chain before
         // landing on the dashboard - 60s gives it enough room without masking real failures
         await this.page.waitForURL((url) => url.toString().includes('dashboard'),{timeout : 60000});
+        await this.dismissBlockingModal();
+    }
+
+    /**
+     * The dashboard can come up behind a full-viewport modal that swallows every click after
+     * login - most recently the "We've Updated Our Terms and Conditions" acceptance dialog,
+     * which QA raises whenever sample legal documents are published (it took out the whole
+     * suite on 2026-08-03: every test failed on "subtree intercepts pointer events").
+     *
+     * It's fetched asynchronously a moment after the dashboard renders, and shows once per
+     * login, so a reload is enough to get past it for the rest of the session. Deliberately
+     * not clicking the modal's Accept button: that records acceptance of a legal document
+     * against the account, which isn't a test's decision to make - and the app reuses the
+     * same element id on unrelated dashboard buttons, so a mis-scoped click is a real risk.
+     */
+    async dismissBlockingModal() {
+        // :visible matters - the app leaves empty, hidden modal wrappers in the DOM, and
+        // waiting on one of those would time out while the real overlay is up
+        const overlay = this.page.locator('div.tw-fixed.tw-inset-0:visible');
+
+        const appeared = await overlay
+            .first()
+            .waitFor({ state: 'visible', timeout: 8000 })
+            .then(() => true)
+            .catch(() => false);
+        if (!appeared) {
+            return;
+        }
+
+        await this.page.reload();
+        await this.page
+            .waitForURL((url) => url.toString().includes('dashboard'), { timeout: 30000 })
+            .catch(() => {});
+        // it also disappears on its own after a while, so allow for either
+        await overlay.first().waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {});
     }
 
     async goToLoginPage() {
