@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/e2eFixtures.js';
 import { userData } from '../../mocks/common/userData.js';
 import { testData } from '../../mocks/common/testData.js';
 import { randomUtils } from '../../utils/randomUtils.js';
-import { PoTenantE2EPage } from '../../pageObjects/e2e/poTenantE2E_page.js';
 
 /**
  * End-to-end: property owner -> tenant, joined by a real email.
@@ -57,30 +56,9 @@ test.describe('E2E - PO creates a lease and the invited tenant signs in and sees
         phone: `99999${randomUtils.generateRandomNumber(5)}`,
     };
 
-    let poContext;
-    let poPage;
-    let tenantContext;
-    let tenantPage;
-    let activationLink;
-    let tenantPortalUrl;
-
-    test.beforeAll(async ({ browser, baseURL }) => {
-        poContext = await browser.newContext({ baseURL });
-        poPage = await poContext.newPage();
-        tenantContext = await browser.newContext({ baseURL });
-        tenantPage = await tenantContext.newPage();
-
-        await PoTenantE2EPage.suppressSupportChatWidget(poPage);
-        await PoTenantE2EPage.suppressSupportChatWidget(tenantPage);
-    });
-
-    test.afterAll(async () => {
-        await poContext?.close();
-        await tenantContext?.close();
-    });
-
-    test('PO creates a property, leases it to a tenant, and the tenant activates and sees the lease', async () => {
-        const e2ePage = new PoTenantE2EPage(poPage, tenantPage);
+    test('PO creates a property, leases it to a tenant, and the tenant activates and sees the lease', async ({ poPage, tenantPage, e2ePage }) => {
+        let activationLink;
+        let tenantPortalUrl;
 
         console.log('Property:', property);
         console.log('Tenant:', tenant);
