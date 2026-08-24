@@ -7,6 +7,12 @@ export class LoginPage {
         this.loginButton = page.locator('button[data-action-button-primary="true"]');
         this.logoutButton = page.locator('img[alt="logout"]');
 
+        // Scoped to the modal's own id rather than a generic modal button, since the app
+        // reuses ids across unrelated dashboard buttons.
+        this.legalAcceptButton = page.locator('#legal-accept-accept-btn');
+        this.legalDocumentPane = page.locator('div.tw-fixed.tw-inset-0 div.tw-overflow-y-auto');
+        this.blockingOverlay = page.locator('div.tw-fixed.tw-inset-0:visible');
+
     }
 
     async logout(){
@@ -51,36 +57,65 @@ export class LoginPage {
 
     /**
      * The dashboard can come up behind a full-viewport modal that swallows every click after
-     * login - most recently the "We've Updated Our Terms and Conditions" acceptance dialog,
-     * which QA raises whenever sample legal documents are published (it took out the whole
-     * suite on 2026-08-03: every test failed on "subtree intercepts pointer events").
+     * login - the "We've Updated Our Terms and Conditions" acceptance dialog, which QA raises
+     * whenever sample legal documents are published (it took out the whole suite on
+     * 2026-08-03: every test failed on "subtree intercepts pointer events").
      *
-     * It's fetched asynchronously a moment after the dashboard renders, and shows once per
-     * login, so a reload is enough to get past it for the rest of the session. Deliberately
-     * not clicking the modal's Accept button: that records acceptance of a legal document
-     * against the account, which isn't a test's decision to make - and the app reuses the
-     * same element id on unrelated dashboard buttons, so a mis-scoped click is a real risk.
+     * This used to reload the page instead of accepting, on the reasoning that recording a
+     * legal acceptance isn't a test's decision to make. Two things since disproved that:
+     *
+     *   - The reload doesn't work. CI run #49 on 2026-08-24 failed income, expenses and
+     *     propertyMS with the backdrop still intercepting the left-nav click, 24 times over.
+     *     Hiding the overlay isn't enough either - per the e2e page object, the router then
+     *     refuses to move and the left nav silently goes dead. It has to be cleared through
+     *     the app.
+     *   - The documents QA publishes here are explicitly sample text ("SAMPLE DOCUMENT - NOT
+     *     LEGALLY BINDING", generated to exercise the legal-documents flow), so accepting in
+     *     the QA environment is safe.
+     *
+     * So this now does what dismissLegalOverlay() in pageObjects/e2e/poTenantE2E_page.js has
+     * been doing successfully all along, and the two should be kept in step. Two things are
+     * non-obvious about the dialog:
+     *   - Accept is gated on reading: it carries aria-disabled="true" (the `disabled`
+     *     property stays false) until the document pane has been scrolled to the end.
+     *   - More than one document can be queued, and the dialogs stack. The earlier one in
+     *     DOM order sits *behind* the later one, so only .last() is actually clickable.
      */
     async dismissBlockingModal() {
-        // :visible matters - the app leaves empty, hidden modal wrappers in the DOM, and
-        // waiting on one of those would time out while the real overlay is up
-        const overlay = this.page.locator('div.tw-fixed.tw-inset-0:visible');
-
-        const appeared = await overlay
+        // 'attached' rather than 'visible': the button is in the DOM before the dialog has
+        // finished animating in. 15s because the modal is fetched asynchronously a moment
+        // after the dashboard renders - the old 8s window was being outlived by it.
+        const appeared = await this.legalAcceptButton
             .first()
-            .waitFor({ state: 'visible', timeout: 8000 })
+            .waitFor({ state: 'attached', timeout: 15000 })
             .then(() => true)
             .catch(() => false);
         if (!appeared) {
             return;
         }
 
-        await this.page.reload();
-        await this.page
-            .waitForURL((url) => url.toString().includes('dashboard'), { timeout: 30000 })
-            .catch(() => {});
-        // it also disappears on its own after a while, so allow for either
-        await overlay.first().waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {});
+        for (let document = 0; document < 4; document++) {
+            if ((await this.legalAcceptButton.count()) === 0) {
+                break;
+            }
+
+            await this.legalDocumentPane
+                .evaluateAll((panes) =>
+                    panes.forEach((pane) => {
+                        pane.scrollTop = pane.scrollHeight;
+                        pane.dispatchEvent(new Event('scroll', { bubbles: true }));
+                    }),
+                )
+                .catch(() => {});
+            await this.page.waitForTimeout(500);
+
+            await this.legalAcceptButton.last().click({ timeout: 10000 }).catch(() => {});
+            await this.page.waitForTimeout(2500);
+        }
+
+        // :visible matters - the app leaves empty, hidden modal wrappers in the DOM, and
+        // waiting on one of those would time out while the real overlay is up
+        await this.blockingOverlay.first().waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {});
     }
 
     async goToLoginPage() {

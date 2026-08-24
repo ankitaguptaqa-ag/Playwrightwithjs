@@ -290,7 +290,10 @@ export class ExpensePage {
 
     async recordSingleExpense() {
         await this.addExpenseButton.click();
-        await this.addExpense.singleExpenseHeading.waitFor({ state: 'visible', timeout: 5000 });
+        // 15s, not 5s: the click triggers a navigation to /expenses and the Single Expense
+        // form renders after it settles - 5s was timing out while the nav was still in
+        // flight ("waiting for ... navigation to finish", CI 2026-08-24).
+        await this.addExpense.singleExpenseHeading.waitFor({ state: 'visible', timeout: 15000 });
         const expenseDetails = {
             description: `Expense_${TestData.randomNumber(5)}`,
             amount: '200.00',

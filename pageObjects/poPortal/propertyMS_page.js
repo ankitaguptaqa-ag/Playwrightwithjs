@@ -339,7 +339,16 @@ export class PropertiesPage {
         await this.page.waitForTimeout(2000);
         await this.add_TenantDetails.add_Tenant_Button.click();
         await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
-        await this.add_TenantDetails.add_New_Tenant_Button.click();
+        // The Add Tenants table now comes up with a blank tenant row already in place, so
+        // clicking "Add tenant" on top of it leaves two blank rows - and fname_Input then
+        // matches both and fails on strict mode ("resolved to 2 elements", CI 2026-08-24).
+        // Only add a row when there isn't already one waiting to be filled; the settle wait
+        // matters because the default row renders a beat after the Add tenant link does, and
+        // counting before it lands reads 0 and adds the duplicate anyway.
+        await this.page.waitForTimeout(1500);
+        if ((await this.add_TenantDetails.fname_Input.count()) === 0) {
+            await this.add_TenantDetails.add_New_Tenant_Button.click();
+        }
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1500);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
@@ -422,7 +431,16 @@ export class PropertiesPage {
         await this.page.waitForTimeout(1500);
         await this.add_TenantDetails.add_Tenant_Button.click();
         await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
-        await this.add_TenantDetails.add_New_Tenant_Button.click();
+        // The Add Tenants table now comes up with a blank tenant row already in place, so
+        // clicking "Add tenant" on top of it leaves two blank rows - and fname_Input then
+        // matches both and fails on strict mode ("resolved to 2 elements", CI 2026-08-24).
+        // Only add a row when there isn't already one waiting to be filled; the settle wait
+        // matters because the default row renders a beat after the Add tenant link does, and
+        // counting before it lands reads 0 and adds the duplicate anyway.
+        await this.page.waitForTimeout(1500);
+        if ((await this.add_TenantDetails.fname_Input.count()) === 0) {
+            await this.add_TenantDetails.add_New_Tenant_Button.click();
+        }
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
@@ -527,7 +545,16 @@ export class PropertiesPage {
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.add_Tenant_Button.click();
         await this.add_TenantDetails.add_New_Tenant_Button.waitFor({ state: 'visible', timeout: 15000 });
-        await this.add_TenantDetails.add_New_Tenant_Button.click();
+        // The Add Tenants table now comes up with a blank tenant row already in place, so
+        // clicking "Add tenant" on top of it leaves two blank rows - and fname_Input then
+        // matches both and fails on strict mode ("resolved to 2 elements", CI 2026-08-24).
+        // Only add a row when there isn't already one waiting to be filled; the settle wait
+        // matters because the default row renders a beat after the Add tenant link does, and
+        // counting before it lands reads 0 and adds the duplicate anyway.
+        await this.page.waitForTimeout(1500);
+        if ((await this.add_TenantDetails.fname_Input.count()) === 0) {
+            await this.add_TenantDetails.add_New_Tenant_Button.click();
+        }
         await this.add_TenantDetails.fname_Input.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.fname_Input.fill(tenantDetails.fname);
