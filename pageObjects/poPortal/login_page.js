@@ -38,7 +38,23 @@ export class LoginPage {
         }
 
         await this.logoutButton.click({ timeout: 15000 });
-        await this.page.waitForURL((url) => url.toString().includes('qa-auth'),{timeout : 30000});
+
+        // Signing out hops through the app's auth host on the way to Auth0's universal login:
+        //   /dashboard -> qa-auth.innago.com/login?logout=true
+        //              -> identify-qa.innago.com/u/login/identifier?state=...   (settles here)
+        //
+        // qa-auth is only a staging post, so waiting on it returned while the browser was
+        // still moving, and a caller asserting the URL straight afterwards raced the next
+        // redirect. Wait for the login form instead: it is on the page the browser actually
+        // settles on, and it proves the session is gone rather than that a URL flashed by.
+        //
+        // Deliberately not throwing when it never arrives. Sometimes the app comes straight
+        // back to /dashboard instead, which would mean the sign-out did not clear the Auth0
+        // session at all - that is worth a test failing over, but it is the spec's assertion
+        // to make, not this helper's. Swallowing it here also keeps fixture teardown, which
+        // calls logout() on a session it is about to discard anyway, from paying 30s for a
+        // diagnosis nobody reads.
+        await this.emailInput.waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
 
     }
 

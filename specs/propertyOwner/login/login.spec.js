@@ -18,7 +18,12 @@ test.describe('Property Owner Login Tests', () => {
         await loginPage.login(poUser.userName, poUser.password);
         await expect(page).toHaveURL(/dashboard/);
         await loginPage.logout();
-        await expect(page).toHaveURL(/qa-auth/);
+
+        // Signing out settles on Auth0's universal login (identify-*), having passed through
+        // the app's own auth host (qa-auth) on the way - see the redirect chain in logout().
+        // Accept either, so this doesn't depend on which hop the browser happens to be on.
+        await expect(page).toHaveURL(/identify-|-auth\.innago\.com/);
+        // the real proof the session is gone: signing in is being asked for again
         await expect(page.locator('#username')).toBeVisible();
     });
 
