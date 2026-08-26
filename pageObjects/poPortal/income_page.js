@@ -471,19 +471,45 @@ export class IncomePage {
     // that passed one test earlier in the run). Clicking again re-opens it, so try a few
     // times rather than giving up on the first miss.
     async expandInvoiceGroup(candidateRows) {
-        for (let attempt = 0; attempt < 3; attempt++) {
+        // Group header rows (.invoice-table-row) toggle their group open and shut; the invoice
+        // rows inside are .income-table-row. This used to click tableRows.first(), which is
+        // the first header - and so assumed the invoice we just created sits in the first
+        // property group. That holds while the filter narrows the listing to one property and
+        // fails otherwise, which is how "record payment" spent three attempts toggling a group
+        // that never contained the row (CI 2026-08-26).
+        const groupHeaders = this.page.locator('tbody>tr.invoice-table-row:visible');
+
+        // Twice round: a group that was already opening when we clicked gets closed by that
+        // click, and is open again by the time the second pass reaches it.
+        for (let attempt = 0; attempt < 2; attempt++) {
             if (await candidateRows.first().isVisible().catch(() => false)) {
                 return;
             }
 
-            await this.listing.tableRows.first().click();
-            const appeared = await candidateRows
-                .first()
-                .waitFor({ state: 'visible', timeout: 10000 })
-                .then(() => true)
-                .catch(() => false);
-            if (appeared) {
-                return;
+            const headerCount = await groupHeaders.count();
+            if (headerCount === 0) {
+                // no group headers rendered yet - fall back to the old behaviour rather than
+                // skip the click entirely, then let the loop re-check
+                await this.listing.tableRows.first().click().catch(() => {});
+                await candidateRows.first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                continue;
+            }
+
+            for (let i = 0; i < headerCount; i++) {
+                await groupHeaders.nth(i).click().catch(() => {});
+                const appeared = await candidateRows
+                    .first()
+                    .waitFor({ state: 'visible', timeout: 5000 })
+                    .then(() => true)
+                    .catch(() => false);
+                if (appeared) {
+                    return;
+                }
+
+                // Nothing here - click again to put the group back as we found it. Without
+                // this, a group that was already open ends up closed, and the rows the caller
+                // wants can be the ones we just hid.
+                await groupHeaders.nth(i).click().catch(() => {});
             }
         }
 
