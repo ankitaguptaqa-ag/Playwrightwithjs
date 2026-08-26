@@ -465,11 +465,29 @@ export class IncomePage {
     // from an invoice's detail view the group is sometimes already expanded, and clicking it
     // then collapses it instead - hiding the very candidate rows the caller is iterating over.
     // Only click when the rows aren't showing, and confirm they're there afterwards.
+    // Because it's a toggle, one mistimed click is self-defeating: if the group was already
+    // opening when we clicked, we close it, and the single waitFor then times out on rows
+    // that our own click hid (CI 2026-08-24, "all invoice details fields" - the same flow
+    // that passed one test earlier in the run). Clicking again re-opens it, so try a few
+    // times rather than giving up on the first miss.
     async expandInvoiceGroup(candidateRows) {
-        if (await candidateRows.first().isVisible().catch(() => false)) {
-            return;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (await candidateRows.first().isVisible().catch(() => false)) {
+                return;
+            }
+
+            await this.listing.tableRows.first().click();
+            const appeared = await candidateRows
+                .first()
+                .waitFor({ state: 'visible', timeout: 10000 })
+                .then(() => true)
+                .catch(() => false);
+            if (appeared) {
+                return;
+            }
         }
-        await this.listing.tableRows.first().click();
+
+        // out of attempts - let the caller see the real timeout rather than a silent miss
         await candidateRows.first().waitFor({ state: 'visible', timeout: 10000 });
     }
 

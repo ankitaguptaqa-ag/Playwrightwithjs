@@ -315,6 +315,46 @@ export class PropertiesPage {
     }
 
 
+    /**
+     * The lease wizard sometimes puts a Renter Insurance step between Tenant Details and
+     * Finalize Lease, and sometimes goes straight through - which is why all three call
+     * sites had the step commented out rather than deleted.
+     *
+     * Skipping it unconditionally is what left CI waiting the full 15s for
+     * #upload-signed-lease on a page that was still showing renter insurance (run
+     * 2026-08-24). So take the step when it's there and move on when it isn't; the short
+     * window is deliberate, since not finding it is the common case and shouldn't cost 15s.
+     */
+    async passRenterInsuranceStepIfShown() {
+        const nextButton = this.renterInsurance_Details.next_Button_RenterInsuranceDetails;
+
+        const shown = await nextButton
+            .waitFor({ state: 'visible', timeout: 5000 })
+            .then(() => true)
+            .catch(() => false);
+        if (!shown) {
+            return;
+        }
+
+        await this.page.waitForTimeout(1000);
+
+        // Next comes up disabled when the account has a half-finished renters-insurance
+        // draft ("We've saved your renters insurance settings as a draft... You can finish
+        // setup anytime from your Account Settings page"). Nothing the wizard can do clears
+        // that - it's account state, and it blocks the lease. Say so, rather than spending
+        // 15s retrying a button that is never going to enable.
+        if (!(await nextButton.isEnabled())) {
+            throw new Error(
+                'Renter Insurance step is blocking the lease: its Next button is disabled, which happens ' +
+                'when the signed-in account has an unfinished renters-insurance draft. Resolve it from ' +
+                "the account's Settings page (Resume Settings), then re-run.",
+            );
+        }
+
+        await nextButton.click();
+        await this.page.waitForTimeout(2000);
+    }
+
     async addingM2MLeaseTermDetails_Monthly() {
         const tenantDetails = {
             fname: randomUtils.randomAlphabets(5),
@@ -363,11 +403,7 @@ export class PropertiesPage {
         await this.page.waitForTimeout(2000);
         await this.add_TenantDetails.next_Button_TenantDetails.click();
         await this.page.waitForTimeout(2000);
-        // Renter insurance step
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.waitFor({ state: 'visible', timeout: 15000 });
-        // await this.page.waitForTimeout(1500);
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.click();
-        // await this.page.waitForTimeout(2000);
+        await this.passRenterInsuranceStepIfShown();
         await this.finalize_Lease.offline_Signature_Checkbox.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1500);
         await this.finalize_Lease.offline_Signature_Checkbox.click();
@@ -470,10 +506,7 @@ export class PropertiesPage {
         await this.page.waitForTimeout(1000);
         await this.add_TenantDetails.next_Button_TenantDetails.click();
         await this.page.waitForTimeout(2000);
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.waitFor({ state: 'visible', timeout: 15000 });
-        // await this.page.waitForTimeout(1000);
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.click();
-        // await this.page.waitForTimeout(2000);
+        await this.passRenterInsuranceStepIfShown();
         await this.finalize_Lease.offline_Signature_Checkbox.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.finalize_Lease.offline_Signature_Checkbox.click();
@@ -569,10 +602,7 @@ export class PropertiesPage {
         await this.page.waitForTimeout(2000);
         await this.add_TenantDetails.next_Button_TenantDetails.click();
         await this.page.waitForTimeout(2000);
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.waitFor({ state: 'visible', timeout: 15000 });
-        // await this.page.waitForTimeout(1000);
-        // await this.renterInsurance_Details.next_Button_RenterInsuranceDetails.click();
-        // await this.page.waitForTimeout(2000);
+        await this.passRenterInsuranceStepIfShown();
         await this.finalize_Lease.offline_Signature_Checkbox.waitFor({ state: 'visible', timeout: 15000 });
         await this.page.waitForTimeout(1000);
         await this.finalize_Lease.offline_Signature_Checkbox.click();
