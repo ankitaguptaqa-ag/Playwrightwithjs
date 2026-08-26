@@ -305,8 +305,12 @@ export class PropertiesPage {
         await this.addPropertyDetails.unit_Name_input.fill(addressinformation.unit);
         await this.page.waitForTimeout(1000);
         await this.addPropertyDetails.next_Button_UnitDetails.click();
-        await this.addPropertyDetails.bank_Account_selection.waitFor({ state: 'visible', timeout: 15000 });
-        await this.addPropertyDetails.bank_Account_selection.click();
+        // One radio per deposit account the owner holds, so this is only ever a single
+        // element for an owner with a single account - po1 has one, po2 has seven, and the
+        // bare locator fails strict mode on the latter. Any account will do for the test;
+        // take the first.
+        await this.addPropertyDetails.bank_Account_selection.first().waitFor({ state: 'visible', timeout: 15000 });
+        await this.addPropertyDetails.bank_Account_selection.first().click();
         await this.page.waitForTimeout(1000);
         await this.addPropertyDetails.save_Button_Property_Setting.click();
 

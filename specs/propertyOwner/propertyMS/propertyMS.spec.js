@@ -1,5 +1,10 @@
 import { test, expect } from '../../../fixtures/poFixtures.js';
 
+// po1 has an unfinished renters-insurance draft, which comes up mid-wizard with its Next
+// button disabled and blocks every lease this file creates - account state no test can drive
+// past. po2 doesn't carry that draft. Switch back once po1's draft is resolved from Settings.
+test.use({ poUserKey: 'po2' });
+
 test.describe.configure({ mode: 'serial' });
 
 
