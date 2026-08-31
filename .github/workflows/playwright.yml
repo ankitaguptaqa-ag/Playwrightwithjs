@@ -4,10 +4,23 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  schedule:
+    # 11:00 IST daily. GitHub cron is always UTC and IST is UTC+5:30, so 05:30 UTC.
+    # GitHub queues scheduled runs behind its own load, so expect it to start a few
+    # minutes late rather than exactly on the half hour.
+    - cron: '30 5 * * *'
+  # lets you kick off a run by hand from the Actions tab
+  workflow_dispatch:
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    # Job level so the mail steps can check whether the secrets are set at all - a fork PR
+    # gets no secrets, and the run should still pass rather than fail trying to send mail.
+    env:
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      MAIL_TO: ${{ secrets.MAIL_TO }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -25,3 +38,50 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+
+    # QA sign-off dashboard: verdict, pass rate, per-spec breakdown and charts. Also writes a
+    # summary table into the run page itself, so the headline is visible without downloading.
+    - name: Generate the sign-off dashboard
+      if: ${{ !cancelled() }}
+      run: node scripts/ci/generate-signoff-report.js
+      env:
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+        COMMIT: ${{ github.sha }}
+        TEST_ENV: "QA (qa-my.innago.com)"
+
+    - name: Upload the sign-off dashboard
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: sign-off-report
+        path: test-results/sign-off-report.html
+        retention-days: 30
+
+    # Which tests passed and failed, as an HTML table - built from the json reporter's output.
+    # Runs after the dashboard so it can go out as an attachment.
+    - name: Build the results email
+      if: ${{ !cancelled() }}
+      run: node scripts/ci/build-test-email.js
+      env:
+        MAIL_FROM: ${{ secrets.MAIL_USERNAME }}
+        REPO: ${{ github.repository }}
+        # head_ref is the source branch on a PR; ref_name would read "14/merge"
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+        COMMIT: ${{ github.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    # curl speaks SMTP, so no third-party mail action is needed. Gmail requires an App
+    # Password here (a normal account password is rejected) - see README/repo secrets.
+    # All three secrets, not just the username: with a half-configured setup curl fails
+    # "Login denied" and takes the whole run red. continue-on-error for the same reason -
+    # a mail problem must never turn a passing test run into a failing check.
+    - name: Email the results
+      if: ${{ !cancelled() && env.MAIL_USERNAME != '' && env.MAIL_PASSWORD != '' && env.MAIL_TO != '' }}
+      continue-on-error: true
+      run: |
+        curl --silent --show-error --ssl-reqd \
+          --url 'smtps://smtp.gmail.com:465' \
+          --user "$MAIL_USERNAME:$MAIL_PASSWORD" \
+          --mail-from "$MAIL_USERNAME" \
+          --mail-rcpt "$MAIL_TO" \
+          --upload-file test-results/email.txt

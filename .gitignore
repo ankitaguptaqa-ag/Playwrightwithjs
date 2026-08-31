@@ -8,3 +8,6 @@ node_modules/
 /playwright/.auth/
 /.playwright-mcp/
 /allure-results/
+
+# Claude Code - personal permission state, not shared
+.claude/settings.local.json
