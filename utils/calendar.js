@@ -1,4 +1,4 @@
-const Month_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const Month_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export class Calendar {
     constructor(page) {
@@ -98,6 +98,37 @@ export class Calendar {
         }
         await this.page.locator(this.locators.getGivenDate(targetDay)).click();
         console.log(`Selected date: ${this.getCurrentMonthAbbr()} ${targetDay} , ${target.getFullYear()}`);
+    }
+
+    /**
+     * Selects `day` (default: today's day-of-month) exactly `monthsOffset` months from today,
+     * jumping straight to the target year/month via the picker's own year selector rather
+     * than clicking "next month" repeatedly - the offset can cross a year boundary (or
+     * several), and `new Date(year, month + monthsOffset, day)` normalizes that for free.
+     *
+     * Matches the month button case-insensitively, unlike getGivenMonth/Month_ABBR above:
+     * the recurrence "Ends On" datepicker this was written for renders "FEB", not the "Feb"
+     * the rest of this class assumes elsewhere. Kept local to this method rather than changed
+     * on getGivenMonth, so as not to affect the pickers that rely on that exact-case match.
+     */
+    async selectDateMonthsFromToday(monthsOffset, day) {
+        const today = new Date();
+        const target = new Date(today.getFullYear(), today.getMonth() + monthsOffset, day ?? today.getDate());
+        const targetMonthAbbr = Month_ABBR[target.getMonth()].toUpperCase();
+        const targetYear = target.getFullYear();
+        const targetDay = target.getDate();
+
+        await this.page.locator(this.locators.yearSelectionButton).click();
+        await this.page.locator(this.locators.getGivenYear(targetYear)).click();
+        await this.page
+            .locator(
+                `//button/span[translate(normalize-space(text()), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = '${targetMonthAbbr}']`,
+            )
+            .click();
+        await this.page.locator(this.locators.getGivenDate(targetDay)).click();
+        console.log(`Selected date: ${targetMonthAbbr} ${targetDay} , ${targetYear}`);
+
+        return target;
     }
 
     async setDateForGivenMonth(month, day) {
