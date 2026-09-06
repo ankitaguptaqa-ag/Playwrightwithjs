@@ -74,12 +74,57 @@ export const test = base.extend({
      * included, so LoginPage.goToLoginPage()'s page.goto('/') resolves exactly as before.
      */
     poSession: [async ({ browser, poUser }, use) => {
-        const context = await browser.newContext();
-        const page = await context.newPage();
+        // Signing in is the most failure-prone step in the suite and this fixture is
+        // worker-scoped, so a single bad sign-in used to take down every test in the worker
+        // rather than just itself. On 2026-09-06 that cost a CI run 11 tests that were never
+        // executed at all, none of which had anything wrong with them. Playwright's own
+        // `retries` do not help: they re-run the test, and the worker fixture that actually
+        // failed is rebuilt the same way each time.
+        //
+        // QA's auth stalls are transient, so retry the sign-in itself before writing off the
+        // worker. Each attempt gets a fresh context on purpose - a half-completed Auth0 hop
+        // leaves cookies behind, and reusing them makes the retry fail in a new and less
+        // legible way than the first attempt did.
+        const attempts = Number(process.env.PO_LOGIN_ATTEMPTS || 3);
+        let context;
+        let page;
+        let loginPage;
+        let lastError;
 
-        const loginPage = new LoginPage(page);
-        await loginPage.goToLoginPage();
-        await loginPage.login(poUser.userName, poUser.password);
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+            context = await browser.newContext();
+            page = await context.newPage();
+            loginPage = new LoginPage(page);
+
+            try {
+                await loginPage.goToLoginPage();
+                await loginPage.login(poUser.userName, poUser.password);
+                lastError = undefined;
+                break;
+            } catch (error) {
+                lastError = error;
+                await context.close().catch(() => {});
+                context = undefined;
+
+                // An MFA challenge is a property of the account, not a blip - the next attempt
+                // gets challenged too. Surface it now instead of burning two more sign-ins.
+                if (error.message.includes('MFA challenge')) {
+                    break;
+                }
+
+                if (attempt < attempts) {
+                    console.warn(`Sign-in attempt ${attempt}/${attempts} as ${poUser.userName} failed: ${error.message}`);
+                    // Back off further each time: the usual cause is QA still coming back up.
+                    await new Promise((resolve) => setTimeout(resolve, 5000 * attempt));
+                }
+            }
+        }
+
+        if (lastError) {
+            throw new Error(
+                `Could not sign in as ${poUser.userName} after ${attempts} attempt(s). Last failure: ${lastError.message}`,
+            );
+        }
 
         await use(page);
 

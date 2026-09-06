@@ -13,6 +13,11 @@ export class LoginPage {
         this.legalDocumentPane = page.locator('div.tw-fixed.tw-inset-0 div.tw-overflow-y-auto');
         this.blockingOverlay = page.locator('div.tw-fixed.tw-inset-0:visible');
 
+        // Interstitials Auth0 can raise between the password step and the dashboard.
+        this.snoozePasskeyButton = page.locator('button[value="snooze-enrollment"]');
+        this.acceptConsentButton = page.locator('button[value="accept"]');
+        this.emailMfaHeading = page.locator('text=Verify Your Identity');
+
     }
 
     async logout(){
@@ -65,10 +70,54 @@ export class LoginPage {
         await this.passwordInput.waitFor({state : 'visible' , timeout : 10000});
         await this.passwordInput.fill(password);
         await this.loginButton.click();
+
+        await this.clearSignInInterstitials(email);
+
         // QA server sometimes bounces through a slow multi-hop redirect chain before
         // landing on the dashboard - 60s gives it enough room without masking real failures
-        await this.page.waitForURL((url) => url.toString().includes('dashboard'),{timeout : 60000});
+        try {
+            await this.page.waitForURL((url) => url.toString().includes('dashboard'), { timeout: 60000 });
+        } catch (error) {
+            // A bare "waitForURL timed out" says nothing about which hop stalled, and the hop
+            // is the whole diagnosis: still on identify-qa means the credentials never took,
+            // whereas parked on qa-auth with a ?code= in the URL means Auth0 authenticated
+            // fine and it is the handoff back to the portal that died. Name the URL so the CI
+            // log answers that without anyone opening a trace.
+            throw new Error(
+                `${email} signed in but never reached the dashboard - still on ${this.page.url()} after 60s (${error.message})`,
+            );
+        }
         await this.dismissBlockingModal();
+    }
+
+    /**
+     * Auth0 can put one-off screens between the password step and the dashboard: a passkey
+     * enrolment offer, a consent screen, or an emailed MFA code. Each appears at most once and
+     * the order is not guaranteed, so react to whichever is on screen until the portal loads.
+     *
+     * This mirrors clearSignInInterstitials() in pageObjects/e2e/poTenantE2E_page.js, which has
+     * handled the e2e sign-in this way all along - keep the two in step. login() did not, so an
+     * interstitial surfaced here only as a 60s waitForURL timeout with nothing to say about what
+     * was on screen. That is how CI failed on 2026-09-06: the sign-in stalled, and because
+     * poSession is worker-scoped it took the whole worker with it - 6 failed, 11 never ran.
+     */
+    async clearSignInInterstitials(email) {
+        for (let step = 0; step < 6; step++) {
+            if (this.page.url().includes('dashboard')) {
+                return;
+            }
+            if (await this.snoozePasskeyButton.isVisible().catch(() => false)) {
+                await this.snoozePasskeyButton.click().catch(() => {});
+            } else if (await this.acceptConsentButton.isVisible().catch(() => false)) {
+                await this.acceptConsentButton.click().catch(() => {});
+            } else if (await this.emailMfaHeading.isVisible().catch(() => false)) {
+                // Some accounts are challenged with an emailed code from some networks but not
+                // others. Fail with the reason rather than timing out on waitForURL. Retrying
+                // this is pointless - see the guard in poSession.
+                throw new Error(`${email} was served an email MFA challenge; this spec cannot complete that step`);
+            }
+            await this.page.waitForTimeout(2500);
+        }
     }
 
     /**
