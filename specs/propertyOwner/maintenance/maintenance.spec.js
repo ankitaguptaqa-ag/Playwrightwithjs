@@ -19,9 +19,17 @@ test.describe('Maintenance Tests - shared login', () => {
         const context = await browser.newContext();
         sharedPage = await context.newPage();
 
+        // po2 (qa_saumya) is served an Auth0 email MFA challenge from the CI runners and can
+        // no longer sign in there at all - CI runs 34021160654 and 34026049060 both lost this
+        // whole file to it, 0ms per test, before any maintenance code ran. The challenge is
+        // adaptive MFA reacting to an unfamiliar IP, and the emailed code cannot be read back
+        // because QA->yopmail delivery is down, so there is nothing to automate around it.
+        // expenseUser is the one account observed signing in cleanly on those same runs.
+        const poUser = userData.env.qa.poUsers.expenseUser;
+
         const loginPage = new LoginPage(sharedPage);
         await loginPage.goToLoginPage();
-        await loginPage.login(userData.env.qa.poUsers.po2.userName, userData.env.qa.poUsers.po2.password);
+        await loginPage.login(poUser.userName, poUser.password);
     });
 
     //Navigate to the maintenance page before each test
