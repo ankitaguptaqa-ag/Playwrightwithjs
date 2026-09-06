@@ -13,11 +13,41 @@ export class LoginPage {
         this.legalDocumentPane = page.locator('div.tw-fixed.tw-inset-0 div.tw-overflow-y-auto');
         this.blockingOverlay = page.locator('div.tw-fixed.tw-inset-0:visible');
 
-        // Interstitials Auth0 can raise between the password step and the dashboard.
+        // --- Sign Up (create a new landlord account) ---
+        // The identifier page's own email field has id="email" - #username above is only the
+        // login form's id, so this needs its own locator rather than reusing emailInput.
+        this.signUpLink = page.locator('a:has-text("Sign up")');
+        this.signUpEmailInput = page.locator('#email');
+        this.marketingConsentCheckbox = page.locator('#marketing-consent');
+        this.verificationCodeInput = page.locator('#code');
+
+        // Everything past the password step is rendered by Auth0's Forms product (the
+        // "how will you use Innago / personal info / business info" questionnaire), a
+        // different system from the Universal Login screens above. It never removes a
+        // finished step from the DOM - it just stops it being visible - so every locator here
+        // has to stay unique against the whole accumulated page, not just the current step.
+        this.wizardContinueButton = page.locator('button.af-nextButton').last();
+        this.landlordTypeCard = page.locator('label:has(img[alt="Landlord"])');
+        this.firstNameInput = page.locator('input[name="first_name"]');
+        this.lastNameInput = page.locator('input[name="last_name"]');
+        this.phoneNumberInput = page.locator('input[name="phone_number"]');
+        this.noOfRentalsInput = page.locator('input[name="no_of_rentals"]');
+        this.businessNameInput = page.locator('input[name="business_name"]');
+        // Has neither a name nor an id - it's the only email-type input the wizard ever renders.
+        this.businessEmailInput = page.locator('input.af-stringField-input[type="email"]');
+        this.businessPhoneInput = page.locator('input[name="business_phone"]');
+        this.addressLine1Input = page.locator('input[name="address_line1"]');
+        this.cityInput = page.locator('input[placeholder="Enter your city"]');
+        this.stateSearchInput = page.locator('input.af-dropdownField-search');
+        // Also unnamed - it's the only input capped at 10 characters on the address step.
+        this.zipInput = page.locator('input.af-stringField-input[maxlength="10"]');
+
+        // Interstitials Auth0 can raise between the password step and the dashboard. They
+        // show up on a first-time account after the sign-up wizard, but also on an ordinary
+        // sign-in, which is why clearSignInInterstitials() below leans on them too.
         this.snoozePasskeyButton = page.locator('button[value="snooze-enrollment"]');
         this.acceptConsentButton = page.locator('button[value="accept"]');
         this.emailMfaHeading = page.locator('text=Verify Your Identity');
-
     }
 
     async logout(){
@@ -187,5 +217,142 @@ export class LoginPage {
         await this.page.goto('/');
     }
 
+    async goToSignUpPage() {
+        await this.goToLoginPage();
+        await this.signUpLink.waitFor({ state: 'visible', timeout: 30000 });
+        await this.signUpLink.click();
+        await this.signUpEmailInput.waitFor({ state: 'visible', timeout: 30000 });
+    }
+
+    async submitSignUpEmail(email) {
+        await this.signUpEmailInput.fill(email);
+        await this.loginButton.click();
+    }
+
+    /**
+     * Auth0 verifies a new address with an emailed 6-digit code rather than a link. Read the
+     * same way waitForActivationEmail() reads the tenant invite in pageObjects/e2e/poTenantE2E_page.js:
+     * open the yopmail inbox in its own tab, since every generated address is already
+     * @yopmail.com and needs no login or API credentials.
+     */
+    async getSignUpVerificationCode(email, { attempts = 10, intervalMs = 5000 } = {}) {
+        const inboxName = email.split('@')[0];
+        const mailPage = await this.page.context().newPage();
+
+        try {
+            for (let attempt = 1; attempt <= attempts; attempt++) {
+                await mailPage.goto(`https://yopmail.com/en/?login=${inboxName}`, { waitUntil: 'domcontentloaded' });
+                // The newest message opens automatically when it is the only one, but click
+                // the first row anyway so this still works once the inbox has history in it.
+                await mailPage.frameLocator('#ifinbox').locator('button.lm').first().click({ timeout: 5000 }).catch(() => {});
+
+                const codeElement = mailPage.frameLocator('#ifmail').locator('code').first();
+                const arrived = await codeElement.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
+                if (arrived) {
+                    return (await codeElement.innerText()).trim();
+                }
+
+                await mailPage.waitForTimeout(intervalMs);
+            }
+            throw new Error(`No Innago verification code reached ${email} after ${attempts} attempts`);
+        } finally {
+            await mailPage.close();
+        }
+    }
+
+    async enterVerificationCode(code) {
+        await this.verificationCodeInput.waitFor({ state: 'visible', timeout: 30000 });
+        await this.verificationCodeInput.fill(code);
+        await this.loginButton.click();
+    }
+
+    async setSignUpPassword(password) {
+        await this.passwordInput.waitFor({ state: 'visible', timeout: 30000 });
+        await this.passwordInput.fill(password);
+        await this.loginButton.click();
+    }
+
+    async selectLandlordAccountType() {
+        await this.landlordTypeCard.waitFor({ state: 'visible', timeout: 30000 });
+        await this.landlordTypeCard.click();
+        await this.wizardContinueButton.click();
+    }
+
+    async fillPersonalInfo({ firstName, lastName, phone, noOfRentals = '1' }) {
+        await this.firstNameInput.fill(firstName);
+        await this.lastNameInput.fill(lastName);
+        await this.phoneNumberInput.fill(phone);
+        await this.noOfRentalsInput.fill(noOfRentals);
+        await this.wizardContinueButton.click();
+    }
+
+    async fillBusinessContactInfo({ businessName, businessEmail, businessPhone }) {
+        await this.businessNameInput.fill(businessName);
+        await this.businessEmailInput.fill(businessEmail);
+        await this.businessPhoneInput.fill(businessPhone);
+        await this.wizardContinueButton.click();
+    }
+
+    /**
+     * The state field is a searchable dropdown layered over a hidden native <select> - typing
+     * into the search box doesn't actually narrow the option list, so the option is matched by
+     * its exact visible text instead of relying on the search to filter down to one result.
+     */
+    async fillBusinessAddress({ addressLine1, city, state, zip }) {
+        await this.addressLine1Input.fill(addressLine1);
+        await this.cityInput.fill(city);
+        await this.stateSearchInput.fill(state);
+        await this.page.locator('div').filter({ hasText: new RegExp(`^${state}$`) }).first().click();
+        await this.zipInput.fill(zip);
+        await this.wizardContinueButton.click();
+    }
+
+    /**
+     * Two one-time interstitials can follow the wizard, in no guaranteed order: a WebAuthn
+     * passkey enrolment prompt (skipped headless, where there is no platform authenticator)
+     * and an OAuth consent screen for the app's first-ever access to this account. Mirrors
+     * clearSignInInterstitials() in pageObjects/e2e/poTenantE2E_page.js.
+     */
+    async clearSignUpInterstitials() {
+        for (let step = 0; step < 6; step++) {
+            if (this.page.url().includes('/dashboard')) {
+                return;
+            }
+            if (await this.snoozePasskeyButton.isVisible().catch(() => false)) {
+                await this.snoozePasskeyButton.click();
+            } else if (await this.acceptConsentButton.isVisible().catch(() => false)) {
+                await this.acceptConsentButton.click();
+            }
+            await this.page.waitForTimeout(2500);
+        }
+    }
+
+    /**
+     * Creates a brand-new landlord account end-to-end: email -> emailed verification code ->
+     * password -> the "how will you use Innago / personal info / business info" wizard -> the
+     * passkey/consent interstitials -> dashboard. Every email passed in must be unique - Auth0
+     * refuses to sign up an address that already has a password set.
+     */
+    async signUpAsLandlord({
+        email, password, firstName, lastName, phone, noOfRentals,
+        businessName, businessEmail, businessPhone, addressLine1, city, state, zip,
+    }) {
+        await this.goToSignUpPage();
+        await this.submitSignUpEmail(email);
+
+        const code = await this.getSignUpVerificationCode(email);
+        await this.enterVerificationCode(code);
+
+        await this.setSignUpPassword(password);
+
+        await this.selectLandlordAccountType();
+        await this.fillPersonalInfo({ firstName, lastName, phone, noOfRentals });
+        await this.fillBusinessContactInfo({ businessName, businessEmail, businessPhone });
+        await this.fillBusinessAddress({ addressLine1, city, state, zip });
+
+        await this.clearSignUpInterstitials();
+        await this.page.waitForURL((url) => url.toString().includes('dashboard'), { timeout: 60000 });
+        await this.dismissBlockingModal();
+    }
 
 }
