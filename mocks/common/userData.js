@@ -23,6 +23,12 @@ export const userData = {
                     userName: 'merlin_satya1@yopmail.com',
                     password: 'Pass@123',
                 },
+                // Created via signup.spec.js while mapping out the sign-up flow - a real
+                // landlord account on QA, reusable for login tests without re-running signup.
+                signupUser: {
+                    userName: 'innagoposignup09052026@yopmail.com',
+                    password: 'Pass@123',
+                },
             },
         },
     },

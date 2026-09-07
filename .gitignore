@@ -11,3 +11,4 @@ node_modules/
 
 # Claude Code - personal permission state, not shared
 .claude/settings.local.json
+/results.xml
