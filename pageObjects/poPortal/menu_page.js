@@ -108,8 +108,13 @@ export class MenuPage {
 
 
     async navigateToMaintenancePage() {
+        await this.maintenance.waitFor({ state: 'visible', timeout: 15000 });
         await this.maintenance.click();
-        await this.page.waitForTimeout(3000);
+        await this.page.waitForURL(/maintenance\/maintenancelist/, { timeout: 15000 });
+        // The route resolves well before the table paints, so the old flat 3s wait here was
+        // both too long on a fast run and too short on a slow one. "New Maintenance" is the
+        // first thing the list renders.
+        await this.page.locator('#adding-new-maintenance').waitFor({ state: 'visible', timeout: 30000 });
     }
 
 

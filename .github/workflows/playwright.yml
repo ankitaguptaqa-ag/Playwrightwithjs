@@ -30,8 +30,29 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    # QA has been unreliable for stretches of a day or more (login/dashboard and other
+    # in-app waits timing out well past their normal margins, across unrelated specs) -
+    # Playwright's own per-test retries fire back-to-back in seconds and do nothing for a
+    # slow window that lasts the whole ~15-minute run. Retrying the entire suite once more
+    # after a real cooldown gives it an actual chance to land outside that window, without
+    # masking a QA outage that spans the whole job - if attempt 2 also fails, the step (and
+    # the check) still goes red.
     - name: Run Playwright tests
-      run: npx playwright test
+      run: |
+        attempt=1
+        max_attempts=2
+        while true; do
+          if npx playwright test; then
+            exit 0
+          fi
+          if [ "$attempt" -ge "$max_attempts" ]; then
+            echo "::error::Playwright run failed on attempt $attempt/$max_attempts - QA did not recover in time."
+            exit 1
+          fi
+          echo "Playwright run failed on attempt $attempt/$max_attempts - QA may be in a slow window. Waiting 5 minutes before retrying the whole suite once more."
+          sleep 300
+          attempt=$((attempt + 1))
+        done
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
