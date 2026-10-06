@@ -1,3 +1,15 @@
+/**
+ * The dismiss controls of the promotional dialogs QA raises on the dashboard: "Stay Updated
+ * with Innago" (Not Now / Turn on SMS Alerts) and "Enjoying Innago?" (Dismiss / Refer a
+ * friend). Scoped to the overlay, so a "Dismiss" button elsewhere in the app is never caught.
+ *
+ * :visible is not decoration. The app leaves empty, hidden modal wrappers in the DOM - the
+ * same reason blockingOverlay above carries it - and without it the handler below reaches
+ * past the dialog that is actually up and clicks a leftover, so nothing ever closes.
+ */
+const PROMO_DISMISS_SELECTOR =
+    'div.tw-fixed.tw-inset-0 button:visible:has-text("Not Now"), div.tw-fixed.tw-inset-0 button:visible:has-text("Dismiss")';
+
 export class LoginPage {
     constructor(page) {
         this.page = page;
@@ -12,6 +24,8 @@ export class LoginPage {
         this.legalAcceptButton = page.locator('#legal-accept-accept-btn');
         this.legalDocumentPane = page.locator('div.tw-fixed.tw-inset-0 div.tw-overflow-y-auto');
         this.blockingOverlay = page.locator('div.tw-fixed.tw-inset-0:visible');
+
+        this.promoDismissButton = page.locator(PROMO_DISMISS_SELECTOR);
 
         // --- Sign Up (create a new landlord account) ---
         // The identifier page's own email field has id="email" - #username above is only the
@@ -31,6 +45,19 @@ export class LoginPage {
         this.firstNameInput = page.locator('input[name="first_name"]');
         this.lastNameInput = page.locator('input[name="last_name"]');
         this.phoneNumberInput = page.locator('input[name="phone_number"]');
+        // Both the personal and the business step carry their own phone field, each with its
+        // own country selector geolocated from the runner's IP - India from a developer
+        // machine here, United States from the GitHub runners - and each validates its number
+        // against that country. So the same number is accepted in one place and rejected in
+        // the other, and both fields have to be pinned, not just the first.
+        //
+        // .last() because the wizard keeps finished steps in the DOM: once the business step
+        // renders there are two of every one of these, and the live one is the later. It
+        // resolves at click time, so the same locator serves both steps.
+        this.activeTelField = page.locator('div.af-telField').last();
+        this.phoneCountryButton = this.activeTelField.locator('div.af-telField-countryButton');
+        // This one really does filter the list, unlike the state dropdown further down.
+        this.phoneCountrySearch = this.activeTelField.locator('input.af-telField-search');
         this.noOfRentalsInput = page.locator('input[name="no_of_rentals"]');
         this.businessNameInput = page.locator('input[name="business_name"]');
         // Has neither a name nor an id - it's the only email-type input the wizard ever renders.
@@ -117,6 +144,10 @@ export class LoginPage {
                 `${email} signed in but never reached the dashboard - still on ${this.page.url()} after 60s (${error.message})`,
             );
         }
+
+        // Armed before the legal modal is handled, because that flow clicks too and the
+        // promo dialogs can already be up by then.
+        await LoginPage.installPromoDialogHandler(this.page);
         await this.dismissBlockingModal();
     }
 
@@ -176,6 +207,63 @@ export class LoginPage {
      *   - More than one document can be queued, and the dialogs stack. The earlier one in
      *     DOM order sits *behind* the later one, so only .last() is actually clickable.
      */
+    /**
+     * QA's dashboard raises promotional dialogs over the whole page - their backdrop is a
+     * div.tw-fixed.tw-inset-0 at z-index 1000000000, so every click underneath reports
+     * "subtree intercepts pointer events" and times out. Run 37309675731 lost income,
+     * propertyMS, the logout step and the PO->tenant e2e to exactly that, 72 interceptions
+     * in one run. They appear on po1; expenseUser's specs were untouched.
+     *
+     * dismissBlockingModal() does not cover them: it is written for the legal-documents
+     * modal and returns straight away when #legal-accept-accept-btn is absent.
+     *
+     * These are not sign-in interstitials. They arrive a moment after the dashboard renders
+     * and again on later navigations, so clearing them once after login does not hold.
+     * addLocatorHandler is the only form of this that survives a dialog opening mid-test:
+     * Playwright clears it at the moment it actually blocks an action, then retries that
+     * action itself. Static because the e2e fixtures install it on pages that never go
+     * through login() - see fixtures/e2eFixtures.js.
+     */
+    static async installPromoDialogHandler(page) {
+        // Removed rather than clicked. Dismissing them the way a user would was tried first,
+        // with addLocatorHandler driving the dialogs' own Not Now / Dismiss buttons: it clears
+        // them, and then #refer-earn-monthly-dismiss-btn comes straight back. addLocatorHandler
+        // holds the action it is rescuing until its locator is hidden, so a dialog that
+        // reappears parks the run there - 350 resolutions of a button that was clicked every
+        // time. These dialogs are not what any of these specs is testing, so suppress them the
+        // way PoTenantE2EPage.suppressSupportChatWidget suppresses the chat widget.
+        const sweep = () => {
+            const LABELS = ['not now', 'dismiss'];
+            const isPromoDialog = (node) =>
+                node instanceof HTMLElement &&
+                node.matches('div.tw-fixed.tw-inset-0') &&
+                Array.from(node.querySelectorAll('button')).some((button) =>
+                    LABELS.includes((button.textContent || '').trim().toLowerCase()),
+                );
+            // The legal-documents modal is the same shape but its button reads Accept, so it
+            // is left alone - dismissBlockingModal() still has to see and clear that one.
+            const clear = () =>
+                document
+                    .querySelectorAll('div.tw-fixed.tw-inset-0')
+                    .forEach((node) => isPromoDialog(node) && node.remove());
+
+            const start = () => {
+                clear();
+                new MutationObserver(clear).observe(document.body, { childList: true, subtree: true });
+            };
+            if (document.body) {
+                start();
+            } else {
+                document.addEventListener('DOMContentLoaded', start);
+            }
+        };
+
+        // addInitScript covers every later navigation; the evaluate covers the page as it
+        // stands right now, since this is installed after the dashboard has already loaded.
+        await page.addInitScript(sweep);
+        await page.evaluate(sweep).catch(() => {});
+    }
+
     async dismissBlockingModal() {
         // 'attached' rather than 'visible': the button is in the DOM before the dialog has
         // finished animating in. 15s because the modal is fetched asynchronously a moment
@@ -278,19 +366,95 @@ export class LoginPage {
         await this.wizardContinueButton.click();
     }
 
-    async fillPersonalInfo({ firstName, lastName, phone, noOfRentals = '1' }) {
-        await this.firstNameInput.fill(firstName);
-        await this.lastNameInput.fill(lastName);
-        await this.phoneNumberInput.fill(phone);
-        await this.noOfRentalsInput.fill(noOfRentals);
-        await this.wizardContinueButton.click();
+    /**
+     * Picks the country the phone number will be validated against, instead of accepting the
+     * one geolocated from wherever the test happens to be running.
+     */
+    async selectPhoneCountry(country) {
+        await this.phoneCountryButton.click();
+        await this.phoneCountrySearch.fill(country);
+        await this.activeTelField
+            .locator('div.af-telField-country')
+            .filter({
+                has: this.page.locator(`span.af-telFieldOptionListCountry-name:text-is("${country}")`),
+            })
+            .first()
+            .click();
     }
 
-    async fillBusinessContactInfo({ businessName, businessEmail, businessPhone }) {
+    /**
+     * Run 37309675731 lost this step on CI: the phone number was rejected, "No of rentals" came
+     * back empty, the wizard said "One or more fields are not valid", and it never advanced.
+     * The error surfaced two steps later as a timeout on input[name="business_name"], which is
+     * nowhere near the cause.
+     *
+     * The number was not wrong as such - it was being validated against the wrong country. The
+     * selector is geolocated, so CI resolved United States while a developer machine resolves
+     * India, and the suite passed locally and failed on CI with the same data. Pinning the
+     * country makes the number mean the same thing in both places.
+     *
+     * Rentals is then filled after the phone field has blurred and settled, and read back,
+     * because a validation re-render on that field silently clears it.
+     */
+    async fillPersonalInfo({ firstName, lastName, phone, noOfRentals = '1', phoneCountry = 'United States' }) {
+        await this.firstNameInput.fill(firstName);
+        await this.lastNameInput.fill(lastName);
+
+        await this.selectPhoneCountry(phoneCountry);
+        await this.phoneNumberInput.fill(phone);
+
+        await this.noOfRentalsInput.click();
+        await this.page.waitForTimeout(600);
+        await this.noOfRentalsInput.fill(noOfRentals);
+        if ((await this.noOfRentalsInput.inputValue()) !== noOfRentals) {
+            await this.noOfRentalsInput.fill(noOfRentals);
+        }
+
+        await this.wizardContinueButton.click();
+        await this.assertWizardStepAdvanced(this.businessNameInput, 'personal information');
+    }
+
+    /**
+     * The wizard keeps finished steps in the DOM and simply stops showing them, so a step that
+     * refuses to advance looks identical to one that is still loading - the next locator just
+     * times out. Give it a short window, then turn the wizard's own validation text into the
+     * error message, since that text is the entire diagnosis.
+     */
+    async assertWizardStepAdvanced(nextStepInput, stepName) {
+        const advanced = await nextStepInput
+            .waitFor({ state: 'visible', timeout: 20000 })
+            .then(() => true)
+            .catch(() => false);
+        if (advanced) {
+            return;
+        }
+
+        const messages = await this.page
+            .locator('p.af-error, p:has-text("not valid"), p:has-text("valid phone")')
+            .allInnerTexts()
+            .catch(() => []);
+        const reported = messages.map((text) => text.trim()).filter(Boolean).join(' | ');
+
+        throw new Error(
+            `The sign-up wizard would not leave the ${stepName} step. ` +
+            (reported ? `It is reporting: ${reported}` : 'It is showing no validation message.'),
+        );
+    }
+
+    /**
+     * This step has a second phone field with a second geolocated country selector, so it needs
+     * the same pinning as the personal step - a US number here is rejected just as readily
+     * against an India-resolved selector.
+     */
+    async fillBusinessContactInfo({ businessName, businessEmail, businessPhone, phoneCountry = 'United States' }) {
         await this.businessNameInput.fill(businessName);
         await this.businessEmailInput.fill(businessEmail);
+
+        await this.selectPhoneCountry(phoneCountry);
         await this.businessPhoneInput.fill(businessPhone);
+
         await this.wizardContinueButton.click();
+        await this.assertWizardStepAdvanced(this.addressLine1Input, 'business information');
     }
 
     /**
@@ -334,7 +498,7 @@ export class LoginPage {
      * refuses to sign up an address that already has a password set.
      */
     async signUpAsLandlord({
-        email, password, firstName, lastName, phone, noOfRentals,
+        email, password, firstName, lastName, phone, noOfRentals, phoneCountry,
         businessName, businessEmail, businessPhone, addressLine1, city, state, zip,
     }) {
         await this.goToSignUpPage();
@@ -346,12 +510,13 @@ export class LoginPage {
         await this.setSignUpPassword(password);
 
         await this.selectLandlordAccountType();
-        await this.fillPersonalInfo({ firstName, lastName, phone, noOfRentals });
-        await this.fillBusinessContactInfo({ businessName, businessEmail, businessPhone });
+        await this.fillPersonalInfo({ firstName, lastName, phone, noOfRentals, phoneCountry });
+        await this.fillBusinessContactInfo({ businessName, businessEmail, businessPhone, phoneCountry });
         await this.fillBusinessAddress({ addressLine1, city, state, zip });
 
         await this.clearSignUpInterstitials();
         await this.page.waitForURL((url) => url.toString().includes('dashboard'), { timeout: 60000 });
+        await LoginPage.installPromoDialogHandler(this.page);
         await this.dismissBlockingModal();
     }
 
