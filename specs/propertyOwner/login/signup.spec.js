@@ -13,16 +13,21 @@ test.describe('Property Owner Sign Up Tests', () => {
         const firstName = 'Test';
         const lastName = 'Automation';
 
+        // signUpAsLandlord pins the phone country to United States, so this has to be a valid
+        // NANP number - the old 9876543210 is an Indian format and is rejected there. 330 is
+        // the area code covering Hudson, which keeps it consistent with the address below.
+        const phone = '3302345678';
+
         await loginPage.signUpAsLandlord({
             email,
             password: 'Pass@123',
             firstName,
             lastName,
-            phone: '9876543210',
+            phone,
             noOfRentals: '1',
             businessName: `${firstName} ${lastName} Rentals`,
             businessEmail: email,
-            businessPhone: '9876543210',
+            businessPhone: phone,
             addressLine1: '123 Automation St',
             city: 'Hudson',
             state: 'Ohio',

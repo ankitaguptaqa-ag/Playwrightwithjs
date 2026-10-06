@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import { PoTenantE2EPage } from '../pageObjects/e2e/poTenantE2E_page.js';
+import { LoginPage } from '../pageObjects/poPortal/login_page.js';
 
 /**
  * Fixtures for the PO -> tenant end-to-end journey.
@@ -22,6 +23,13 @@ const e2eSession = async ({ browser, baseURL }, use) => {
 
     await PoTenantE2EPage.suppressSupportChatWidget(poPage);
     await PoTenantE2EPage.suppressSupportChatWidget(tenantPage);
+
+    // This flow signs in through the page object's own Auth0 helpers rather than
+    // LoginPage.login(), so it never picks up the promo-dialog handler that login() installs -
+    // and it is the PO dashboard, where those dialogs appear. Run 37309675731 lost this spec
+    // to one of them blocking #start-adding-lease.
+    await LoginPage.installPromoDialogHandler(poPage);
+    await LoginPage.installPromoDialogHandler(tenantPage);
 
     await use({
         poPage,
